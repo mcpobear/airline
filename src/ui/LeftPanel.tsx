@@ -8,6 +8,7 @@ import { ClassBadge, IataBadge } from './airportUi'
 import { formatMoney } from './format'
 import { SearchIcon } from './icons'
 
+import { GlobeStyleSection } from './GlobeStyleSection'
 import { MusicSettings } from './MusicSettings'
 import { DevTools } from './DevTools'
 import { SaveSection } from './SaveSection'
@@ -195,8 +196,6 @@ export function LeftPanel() {
   const section = useUiStore((s) => s.activeSection)
   const autoRotate = useUiStore((s) => s.autoRotate)
   const setAutoRotate = useUiStore((s) => s.setAutoRotate)
-  const mapMode = useUiStore((s) => s.mapMode)
-  const setMapMode = useUiStore((s) => s.setMapMode)
 
   if (section === 'settings') {
     return (
@@ -204,23 +203,12 @@ export function LeftPanel() {
         <Header title="Settings" />
         <div className="panel-scroll flex flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4">
           <Toggle
-            label="Flat map"
-            hint={
-              mapMode === 'flat'
-                ? 'An equirectangular world map that wraps around, so you can fly east or west to the Americas.'
-                : 'Currently showing the 3D globe. Switch back to the flat map.'
-            }
-            checked={mapMode === 'flat'}
-            onChange={(v) => setMapMode(v ? 'flat' : 'globe')}
+            label="Auto-rotate globe"
+            hint="Slowly spins the globe until you take control."
+            checked={autoRotate}
+            onChange={setAutoRotate}
           />
-          {mapMode === 'globe' && (
-            <Toggle
-              label="Auto-rotate globe"
-              hint="Slowly spins the globe until you take control."
-              checked={autoRotate}
-              onChange={setAutoRotate}
-            />
-          )}
+          <GlobeStyleSection />
           <MusicSettings />
           <FutureAircraftToggle />
           <SaveSection />

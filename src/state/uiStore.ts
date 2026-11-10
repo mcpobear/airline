@@ -1,15 +1,13 @@
 import { create } from 'zustand'
+import { DEFAULT_GLOBE_STYLE } from '../world/palettes'
 
-export type MapMode = 'flat' | 'globe'
+const GLOBE_STYLE_KEY = 'global-airline.globeStyle'
 
-const MAP_MODE_KEY = 'global-airline.mapMode'
-
-/** Reading browser storage can throw (private mode, blocked storage), so a miss just means the default. */
-function storedMapMode(): MapMode {
+function storedGlobeStyle(): string {
   try {
-    return localStorage.getItem(MAP_MODE_KEY) === 'globe' ? 'globe' : 'flat'
+    return localStorage.getItem(GLOBE_STYLE_KEY) ?? DEFAULT_GLOBE_STYLE
   } catch {
-    return 'flat'
+    return DEFAULT_GLOBE_STYLE
   }
 }
 
@@ -44,9 +42,9 @@ interface UiState {
   previewRoute: { from: string; to: string } | null
   /** Aircraft the camera follows while it flies (null = free camera). */
   followAircraftId: string | null
-  /** Flat map or 3D globe. Remembered in this browser, not part of the save. */
-  mapMode: MapMode
-  setMapMode: (m: MapMode) => void
+  /** Which world look to draw. Remembered in this browser, not part of the save. */
+  globeStyle: string
+  setGlobeStyle: (id: string) => void
   setPreviewRoute: (r: { from: string; to: string } | null) => void
   setFollowAircraft: (id: string | null) => void
   setSection: (s: SectionId) => void
@@ -67,14 +65,14 @@ export const useUiStore = create<UiState>()((set) => ({
   autoRotate: true,
   previewRoute: null,
   followAircraftId: null,
-  mapMode: storedMapMode(),
-  setMapMode: (mapMode) => {
+  globeStyle: storedGlobeStyle(),
+  setGlobeStyle: (globeStyle) => {
     try {
-      localStorage.setItem(MAP_MODE_KEY, mapMode)
+      localStorage.setItem(GLOBE_STYLE_KEY, globeStyle)
     } catch {
-      // A browser that refuses storage just forgets the choice next time.
+      // A browser that refuses storage just forgets the choice.
     }
-    set({ mapMode })
+    set({ globeStyle })
   },
   setPreviewRoute: (previewRoute) => set({ previewRoute }),
   setFollowAircraft: (followAircraftId) => set(followAircraftId ? { followAircraftId, autoRotate: false } : { followAircraftId }),

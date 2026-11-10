@@ -2,14 +2,50 @@
 
 A casual, single-player airline management game on an interactive 3D globe. No backend, no accounts, no paid services.
 
-**Status: all 10 phases complete (v1.1).** Pick a headquarters among 145 real airports, unlock more, buy aircraft (two A220-100s to start, 29 models to buy), hand-pick passenger and cargo jobs to load, choose a destination and dispatch. Flights play out on the 3D globe (takeoff, cruise, landing), pay when jobs reach their final destination, and keep going while the browser is closed. Jobs never expire, nothing loads automatically, and there are no competitors.
+**Status: all 10 phases complete (v1.2).** Pick a headquarters among 145 real airports, unlock more, buy aircraft (two A220-100s to start, 29 models to buy), hand-pick passenger and cargo jobs to load, choose a destination and dispatch. Flights play out on the 3D globe (takeoff, cruise, landing), pay when jobs reach their final destination, and keep going while the browser is closed. Nothing loads automatically and there are no competitors.
 
 ## How to play
 1. Name your airline and pick a headquarters. Click airports on the globe or use the Airports list to unlock more (price rises with the size of the airport and your network).
 2. **Fleet** > pick an aircraft > load jobs from the airport board (seat and cargo limits apply) > choose a destination (range, airport category and cost are checked and explained) > **Dispatch flight**.
 3. Jobs that need a stopover: fly to the layover, **Unload** them (they wait there, marked LAYOVER, and are paid only at their final destination) and carry them on with any aircraft.
 4. **Finances** shows revenue, costs and per-aircraft profit. Aircraft can be sold for 60% of their price (not while loaded or flying, and never the last one). If you run out of cash with nothing able to fly, one-off emergency funding is offered.
-5. Controls: drag to rotate, wheel/pinch to zoom, Esc closes the side panel, "Follow on globe" tracks a flying aircraft.
+5. Controls: drag to rotate the globe, wheel/pinch to zoom, Esc closes the side panel, "Follow on map" tracks a flying aircraft.
+
+## The globe
+The world is painted once at startup from the Natural Earth land mask: land, sea, a drawn coastline and a lightened
+continental shelf, so land and water never read as the same surface. Five looks ship, switchable in Settings and
+remembered in your browser:
+
+| Style | Looks like |
+| --- | --- |
+| **Relief globe** (default) | A physical globe: real greens, tans and highland browns, shaded terrain, over a starfield. |
+| **Printed atlas** | Ink and paper. Pale land, deep teal sea, a drawn coast and a faint graticule. |
+| **Night routes** | The inflight map at 3am: near-black sea, slate continents, coastlines picked out in light. |
+| **Bold poster** | Saturated flat colour, thick dark coastline, no shading at all. |
+| **Low poly** | The original faceted globe, kept for comparison. |
+
+A style is only a palette plus a lighting setup (`src/world/palettes.ts`), so adding another is a dozen lines and no
+renderer changes. The key light follows the camera, so whatever you are looking at is lit; the low-poly style keeps the
+real sun and its day/night line instead.
+
+Aircraft are modelled per class, so a regional jet, a narrowbody, a widebody and a four-engined jumbo are all
+recognisable in flight.
+
+## Jobs and the board
+Jobs themselves have no deadline: once a job is loaded, in the air, or set down at a layover, it waits for you
+indefinitely and is paid in full on delivery. What does change is each airport's **board of offers, which is replaced
+every 10 minutes** (`BALANCE.jobs.refreshIntervalMs`). The Jobs panel and the aircraft panel both count down to the
+next board. The cycle is derived from the clock rather than a timer, so closing the browser for an hour gets you one
+fresh board rather than six.
+
+**Load all bound for** chips sit above the available jobs: one tap fills the aircraft with everything headed to that
+city, best-paying first, and tells you if anything was left behind.
+
+## Sound
+A lounge score plays in the browser, synthesised with Web Audio: a slow jazz progression on electric piano, bass,
+brushes and a sparse melody. There are no audio files, nothing is downloaded and nothing is licensed. It starts after
+your first click (browsers require that) and can be muted from the speaker button in the top bar, with a volume slider
+in Settings.
 
 ## Stack
 React + TypeScript, Vite, Tailwind CSS 4, Three.js + React Three Fiber, Zustand, Dexie (IndexedDB), Vitest, Playwright.

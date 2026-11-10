@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { BALANCE } from '../config/balance'
 import { useUiStore } from '../state/uiStore'
@@ -10,6 +10,8 @@ import { AirportMarkers } from './AirportMarkers'
 import { FlightLayer } from './FlightLayer'
 import { aircraftPosition } from '../sim/aircraft'
 import { buildGlobeGeometry } from './buildGlobeGeometry'
+import { globeStyle, type GlobeStyle } from '../world/palettes'
+import { TEXTURE_HEIGHT, TEXTURE_WIDTH, worldPixels } from '../world/worldTexture'
 import { latLonToVector3, subSolarPoint, vectorToLatLon } from './coords'
 
 const G = BALANCE.globe
@@ -18,10 +20,32 @@ function defaultCameraPosition() {
   return latLonToVector3(G.defaultView.lat, G.defaultView.lon, G.defaultDistance)
 }
 
-/** Stylised low-poly Earth. Geometry is built once and shared. */
-const Earth = memo(function Earth() {
-  const geometry = useMemo(() => buildGlobeGeometry(G.detail), [])
+/** The planet itself: either faceted low-poly geometry or a smooth painted sphere. */
+const Earth = memo(function Earth({ style }: { style: GlobeStyle }) {
   const setSelection = useUiStore((s) => s.setSelection)
+  const geometry = useMemo(
+    () => (style.faceted ? buildGlobeGeometry(G.detail) : new THREE.SphereGeometry(1, 96, 64)),
+    [style.faceted],
+  )
+  const texture = useMemo(() => {
+    if (style.faceted) return null
+    const canvas = document.createElement('canvas')
+    canvas.width = TEXTURE_WIDTH
+    canvas.height = TEXTURE_HEIGHT
+    const pixels = worldPixels(style.id)
+    canvas.getContext('2d')!.putImageData(new ImageData(pixels, TEXTURE_WIDTH, TEXTURE_HEIGHT), 0, 0)
+    const t = new THREE.CanvasTexture(canvas)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    // SphereGeometry starts its UVs on the -X axis, a quarter turn from the
+    // texture's left edge at longitude -180, so the map is shifted to match.
+    t.wrapS = THREE.RepeatWrapping
+    t.offset.x = 0.25
+    return t
+  }, [style.faceted, style.id])
+
+  useEffect(() => () => texture?.dispose(), [texture])
+  useEffect(() => () => geometry.dispose(), [geometry])
 
   const onClick = (e: ThreeEvent<MouseEvent>) => {
     if (e.delta > 4) return // the pointer moved: it was a drag, not a click
@@ -32,13 +56,17 @@ const Earth = memo(function Earth() {
 
   return (
     <mesh geometry={geometry} onClick={onClick}>
-      <meshStandardMaterial vertexColors flatShading roughness={0.92} metalness={0} />
+      {style.faceted ? (
+        <meshStandardMaterial vertexColors flatShading roughness={0.92} metalness={0} />
+      ) : (
+        <meshStandardMaterial map={texture} roughness={0.95} metalness={0} />
+      )}
     </mesh>
   )
 })
 
 /** Soft rim glow around the planet. */
-const Atmosphere = memo(function Atmosphere() {
+const Atmosphere = memo(function Atmosphere({ colour, strength }: { colour: readonly [number, number, number]; strength: number }) {
   const material = useMemo(
     () =>
       new THREE.ShaderMaterial({
@@ -51,15 +79,22 @@ const Atmosphere = memo(function Atmosphere() {
             vNormal = normalize(normalMatrix * normal);
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
           }`,
+        uniforms: {
+          uColour: { value: new THREE.Vector3(colour[0], colour[1], colour[2]) },
+          uStrength: { value: strength },
+        },
         fragmentShader: /* glsl */ `
+          uniform vec3 uColour;
+          uniform float uStrength;
           varying vec3 vNormal;
           void main() {
             float i = pow(max(0.0, 0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
-            gl_FragColor = vec4(0.42, 0.56, 0.58, i * 0.5);
+            gl_FragColor = vec4(uColour, i * uStrength);
           }`,
       }),
-    [],
+    [colour, strength],
   )
+  useEffect(() => () => material.dispose(), [material])
   return (
     <mesh scale={1.14}>
       <sphereGeometry args={[1, 48, 48]} />
@@ -69,19 +104,28 @@ const Atmosphere = memo(function Atmosphere() {
 })
 
 /** Real-time sun: the day/night terminator follows the actual UTC time. */
-function Sun() {
+function Sun({ style }: { style: GlobeStyle }) {
   const light = useRef<THREE.DirectionalLight>(null)
   const dir = useMemo(() => new THREE.Vector3(), [])
+  const { camera } = useThree()
   useFrame(() => {
     if (!light.current) return
+    if (style.lighting.follow) {
+      // Slightly off the camera axis, so there is still some shading to see.
+      dir.copy(camera.position).normalize().multiplyScalar(6)
+      dir.x += 1.4
+      dir.y += 2.2
+      light.current.position.copy(dir)
+      return
+    }
     const p = subSolarPoint(new Date())
     latLonToVector3(p.lat, p.lon, 6, dir)
     light.current.position.copy(dir)
   })
   return (
     <>
-      <directionalLight ref={light} intensity={G.sunIntensity} color="#fff3dc" />
-      <hemisphereLight args={['#fff6e6', '#9db6a8', G.ambient]} />
+      <directionalLight ref={light} intensity={style.lighting.sun} color={style.lighting.sunColour} />
+      <hemisphereLight args={[style.lighting.skyColour, style.lighting.groundColour, style.lighting.ambient]} />
     </>
   )
 }
@@ -98,7 +142,7 @@ function SelectionMarker() {
   return (
     <mesh ref={ref} position={p}>
       <sphereGeometry args={[0.011, 16, 16]} />
-      <meshBasicMaterial color="#c2491c" />
+      <meshBasicMaterial color="#e0581e" />
     </mesh>
   )
 }
@@ -204,6 +248,7 @@ function CameraRig() {
 
 export function GlobeCanvas() {
   const start = useMemo(() => defaultCameraPosition().toArray() as [number, number, number], [])
+  const style = globeStyle(useUiStore((s) => s.globeStyle))
   return (
     <Canvas
       className="!absolute inset-0"
@@ -211,10 +256,15 @@ export function GlobeCanvas() {
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <color attach="background" args={['#e9dfd0']} />
-      <Sun />
-      <Earth />
-      <Atmosphere />
+      <color attach="background" args={[style.lighting.background]} />
+      {style.lighting.stars && (
+        <Stars radius={60} depth={40} count={3000} factor={3.2} saturation={0} fade speed={0.3} />
+      )}
+      <Sun style={style} />
+      <Earth style={style} />
+      {style.lighting.atmosphere && (
+        <Atmosphere colour={style.lighting.atmosphere.colour} strength={style.lighting.atmosphere.strength} />
+      )}
       <SelectionMarker />
       <AirportMarkers />
       <FlightLayer />

@@ -1,28 +1,19 @@
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { useShallow } from 'zustand/react/shallow'
+import { getAircraftModel } from '../data/aircraft'
+import { airlinerGeometry, VISUAL_CATEGORIES } from './aircraftGeometry'
+import type { AircraftModel } from '../types/game'
 import { flightPosition, flightWindows, altitudeFraction } from '../sim/flightProfile'
 import { useGameStore } from '../state/gameStore'
 import { useUiStore } from '../state/uiStore'
+import { globeStyle } from '../world/palettes'
 import { latLonToVector3 } from './coords'
 import { CRUISE_LIFT, GROUND_RADIUS, routePoints } from './route'
 
-const CAPACITY = 128
+const CAPACITY = 64
 const MAX_PITCH = 0.45
-
-/** Low-poly airliner, nose along +Z, up along +Y. */
-function buildPlaneGeometry(): THREE.BufferGeometry {
-  const parts: THREE.BufferGeometry[] = []
-  const fuselage = new THREE.CylinderGeometry(0.11, 0.11, 1.1, 6).rotateX(Math.PI / 2)
-  const nose = new THREE.ConeGeometry(0.11, 0.35, 6).rotateX(Math.PI / 2).translate(0, 0, 0.72)
-  const wings = new THREE.BoxGeometry(1.25, 0.04, 0.3).translate(0, -0.02, 0.05)
-  const fin = new THREE.BoxGeometry(0.04, 0.32, 0.22).translate(0, 0.17, -0.5)
-  const tail = new THREE.BoxGeometry(0.5, 0.03, 0.14).translate(0, 0.02, -0.5)
-  for (const g of [fuselage, nose, wings, fin, tail]) parts.push(g.index ? g.toNonIndexed() : g)
-  return mergeGeometries(parts)!
-}
 
 const up = new THREE.Vector3()
 const fwd = new THREE.Vector3()
@@ -65,12 +56,28 @@ export function placeAircraft(f: Parameters<typeof flightPosition>[0], now: numb
   out.compose(p1, quat, scaleV.setScalar(scale))
 }
 
-/** All airborne aircraft as one InstancedMesh, plus an invisible, larger copy used as the click target. */
+/**
+ * Airborne aircraft, drawn as one instanced mesh per airliner shape so a
+ * regional jet, a narrowbody, a widebody and a jumbo are all recognisable.
+ * Each group carries an invisible, larger copy used as the click target.
+ */
 export const FlightLayer = memo(function FlightLayer() {
+  return (
+    <>
+      {VISUAL_CATEGORIES.map((category) => (
+        <PlaneGroup key={category} category={category} />
+      ))}
+      <FlightPaths />
+      <PreviewRoute />
+    </>
+  )
+})
+
+function PlaneGroup({ category }: { category: AircraftModel['visualCategory'] }) {
   const planes = useRef<THREE.InstancedMesh>(null)
   const hits = useRef<THREE.InstancedMesh>(null)
   const ids = useRef<string[]>([])
-  const geometry = useMemo(buildPlaneGeometry, [])
+  const geometry = useMemo(() => airlinerGeometry(category), [category])
   const hitGeometry = useMemo(() => new THREE.SphereGeometry(1, 8, 6), [])
   const { camera } = useThree()
   const mat = useMemo(() => new THREE.Matrix4(), [])
@@ -81,19 +88,21 @@ export const FlightLayer = memo(function FlightLayer() {
     const hm = hits.current
     if (!pm || !hm) return
     const now = Date.now()
+    const planeColour = globeStyle(useUiStore.getState().globeStyle).plane
     const { aircraft } = useGameStore.getState()
     const selection = useUiStore.getState().selection
-    const size = THREE.MathUtils.clamp(0.011 * (camera.position.length() - 0.55), 0.016, 0.05)
+    const size = THREE.MathUtils.clamp(0.013 * (camera.position.length() - 0.55), 0.018, 0.06)
     let n = 0
     ids.current = []
     for (const a of aircraft) {
       if (!a.flight || n >= CAPACITY) continue
+      if (getAircraftModel(a.modelId)?.visualCategory !== category) continue
       placeAircraft(a.flight, now, mat, size)
       pm.setMatrixAt(n, mat)
       mat.decompose(p1, quat, scaleV)
-      hm.setMatrixAt(n, mat.compose(p1, quat, scaleV.setScalar(size * 1.9)))
+      hm.setMatrixAt(n, mat.compose(p1, quat, scaleV.setScalar(size * 1.5)))
       const picked = selection?.kind === 'aircraft' && selection.id === a.id
-      pm.setColorAt(n, COLOR.set(picked ? '#e0581e' : '#fdfaf4'))
+      pm.setColorAt(n, COLOR.set(picked ? '#e0581e' : planeColour))
       ids.current.push(a.id)
       n++
     }
@@ -130,11 +139,9 @@ export const FlightLayer = memo(function FlightLayer() {
       >
         <meshBasicMaterial visible={false} />
       </instancedMesh>
-      <FlightPaths />
-      <PreviewRoute />
     </>
   )
-})
+}
 
 const lineCache = new Map<string, THREE.BufferGeometry>()
 function lineGeometry(from: string, to: string) {
@@ -149,14 +156,15 @@ function lineGeometry(from: string, to: string) {
 
 /** A route polyline (solid, or dashed for previews). The geometry is shared and cached per route. */
 function RouteLine({ from, to, dashed = false }: { from: string; to: string; dashed?: boolean }) {
+  const routeColour = globeStyle(useUiStore((s) => s.globeStyle)).route
   const line = useMemo(() => {
     const material = dashed
-      ? new THREE.LineDashedMaterial({ color: '#c2491c', dashSize: 0.02, gapSize: 0.014, transparent: true, opacity: 0.9, depthWrite: false })
-      : new THREE.LineBasicMaterial({ color: '#1a6a66', transparent: true, opacity: 0.6, depthWrite: false })
+      ? new THREE.LineDashedMaterial({ color: '#ffd24a', dashSize: 0.02, gapSize: 0.014, transparent: true, opacity: 0.95, depthWrite: false })
+      : new THREE.LineBasicMaterial({ color: routeColour, transparent: true, opacity: 0.75, depthWrite: false })
     const l = new THREE.Line(lineGeometry(from, to), material)
     if (dashed) l.computeLineDistances()
     return l
-  }, [from, to, dashed])
+  }, [from, to, dashed, routeColour])
   useEffect(() => () => (line.material as THREE.Material).dispose(), [line])
   return <primitive object={line} />
 }
