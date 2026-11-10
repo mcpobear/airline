@@ -15,7 +15,11 @@ export interface GameCore {
   airline: AirlineProfile
   unlockedAirports: string[]
   aircraft: OwnedAircraft[]
-  /** Every job that is not yet delivered: waiting at airports, at layovers, or onboard aircraft. Jobs never expire. */
+  /**
+   * Every job that is not yet delivered: waiting at airports, at layovers, or
+   * onboard aircraft. Jobs have no deadline, but the waiting jobs on each
+   * airport's board are replaced on a timer (see `jobEpoch` / `jobBatch`).
+   */
   jobs: Job[]
   settings: GameSettings
   /** Seeds deterministic generation (registrations now, jobs in Phase 4). */
@@ -24,4 +28,8 @@ export interface GameCore {
   nextAircraftNumber: number
   /** Monotonic counter for job ids; never reused. */
   nextJobNumber: number
+  /** When the job-board clock started (epoch ms). Refreshes are counted from here. */
+  jobEpoch: number
+  /** The refresh cycle the current boards belong to; derived from `jobEpoch` and the clock. */
+  jobBatch: number
 }

@@ -4,9 +4,9 @@ import { usePersistStore } from '../persistence/persistence'
 import { downloadText } from './download'
 
 const bar =
-  'fixed top-[76px] left-1/2 z-30 w-[min(560px,calc(100vw-24px))] -translate-x-1/2 rounded-2xl border border-line/70 bg-panel/95 p-4 text-sm shadow-xl shadow-black/50 backdrop-blur-md'
-const primary = 'rounded-xl bg-cyan px-3 py-1.5 text-xs font-black text-space transition hover:brightness-110'
-const secondary = 'rounded-xl bg-white/10 px-3 py-1.5 text-xs font-extrabold text-ink transition hover:bg-white/15'
+  'fixed top-[76px] left-1/2 z-30 w-[min(560px,calc(100vw-24px))] -translate-x-1/2 rounded-2xl border border-line/70 bg-panel/95 p-4 text-sm shadow-xl shadow-ink/15 backdrop-blur-md'
+const primary = 'rounded-xl bg-teal px-3 py-1.5 text-xs font-black text-white transition hover:brightness-110'
+const secondary = 'rounded-xl bg-ink/8 px-3 py-1.5 text-xs font-extrabold text-ink transition hover:bg-ink/12'
 
 /** Tells the player when saving isn't working or needs a decision. Never overwrites anything by itself. */
 export function PersistenceBanner() {
@@ -16,7 +16,7 @@ export function PersistenceBanner() {
 
   if (status === 'corrupt') {
     return (
-      <div className="fixed inset-0 z-40 grid place-items-center bg-space/80 p-4 backdrop-blur-sm" role="alertdialog" aria-labelledby="corrupt-title">
+      <div className="fixed inset-0 z-40 grid place-items-center bg-paper/80 p-4 backdrop-blur-sm" role="alertdialog" aria-labelledby="corrupt-title">
         <div className="w-full max-w-md rounded-3xl border border-line/70 bg-panel p-6 shadow-2xl">
           <h2 id="corrupt-title" className="text-xl font-black">Your saved game can't be loaded</h2>
           <p className="mt-2 text-sm text-muted">{message}</p>

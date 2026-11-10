@@ -40,6 +40,8 @@ export const BALANCE = {
     priceRounding: 500,
   },
   jobs: {
+    /** How often every airport's waiting jobs are cleared and generated afresh. */
+    refreshIntervalMs: 10 * 60_000,
     /** Hard cap on jobs waiting at one airport. Generation stops at the cap; existing jobs are never deleted. */
     maxWaitingJobsPerAirport: 40,
     /** Jobs an airport is filled up to when it refills (bigger airports offer more). */

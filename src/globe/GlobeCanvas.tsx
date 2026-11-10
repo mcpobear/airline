@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { OrbitControls, Stars } from '@react-three/drei'
+import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { BALANCE } from '../config/balance'
 import { useUiStore } from '../state/uiStore'
@@ -44,7 +44,6 @@ const Atmosphere = memo(function Atmosphere() {
       new THREE.ShaderMaterial({
         transparent: true,
         side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
         depthWrite: false,
         vertexShader: /* glsl */ `
           varying vec3 vNormal;
@@ -56,7 +55,7 @@ const Atmosphere = memo(function Atmosphere() {
           varying vec3 vNormal;
           void main() {
             float i = pow(max(0.0, 0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
-            gl_FragColor = vec4(0.32, 0.72, 1.0, 1.0) * i * 1.0;
+            gl_FragColor = vec4(0.42, 0.56, 0.58, i * 0.5);
           }`,
       }),
     [],
@@ -82,7 +81,7 @@ function Sun() {
   return (
     <>
       <directionalLight ref={light} intensity={G.sunIntensity} color="#fff3dc" />
-      <hemisphereLight args={['#9fc0ff', '#3a4f9a', G.ambient]} />
+      <hemisphereLight args={['#fff6e6', '#9db6a8', G.ambient]} />
     </>
   )
 }
@@ -99,7 +98,7 @@ function SelectionMarker() {
   return (
     <mesh ref={ref} position={p}>
       <sphereGeometry args={[0.011, 16, 16]} />
-      <meshBasicMaterial color="#38d4f5" />
+      <meshBasicMaterial color="#c2491c" />
     </mesh>
   )
 }
@@ -212,8 +211,7 @@ export function GlobeCanvas() {
       dpr={[1, 2]}
       gl={{ antialias: true }}
     >
-      <color attach="background" args={['#050816']} />
-      <Stars radius={60} depth={40} count={3500} factor={3.2} saturation={0} fade speed={0.4} />
+      <color attach="background" args={['#e9dfd0']} />
       <Sun />
       <Earth />
       <Atmosphere />

@@ -3,7 +3,7 @@ import { useGameStore } from '../state/gameStore'
 import { HomeIcon, MinusIcon, PlusIcon, TargetIcon } from './icons'
 
 const btn =
-  'grid h-11 w-11 place-items-center rounded-xl border border-line/60 bg-panel/90 text-ink shadow-lg shadow-black/30 backdrop-blur-md transition hover:bg-panel-2 hover:text-cyan'
+  'grid h-11 w-11 place-items-center rounded-xl border border-line/60 bg-panel/90 text-ink shadow-lg shadow-ink/15 backdrop-blur-md transition hover:bg-panel-2 hover:text-teal'
 
 export function CameraButtons() {
   const issue = useUiStore((s) => s.issueCameraCommand)

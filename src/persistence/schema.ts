@@ -2,7 +2,7 @@ import type { GameCore, Result } from '../sim/core'
 import { validateGame } from './validate'
 
 /** Bump when the saved shape changes, and add a migration from the previous version. */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 export interface SaveFile {
   schemaVersion: number
@@ -14,8 +14,15 @@ export interface SaveFile {
 
 type Migration = (raw: Record<string, unknown>) => Record<string, unknown>
 
-/** MIGRATIONS[n] upgrades a version-n save to version n+1. Empty until the shape first changes. */
-export const MIGRATIONS: Record<number, Migration> = {}
+/** MIGRATIONS[n] upgrades a version-n save to version n+1. */
+export const MIGRATIONS: Record<number, Migration> = {
+  // v2 added the job-board refresh cycle. Older saves start a fresh cycle from
+  // the moment they are loaded, so the player gets a full interval to play with.
+  1: (raw) => {
+    const game = (raw.game ?? {}) as Record<string, unknown>
+    return { ...raw, game: { ...game, jobEpoch: Date.now(), jobBatch: 0 } }
+  },
+}
 
 /** Turns untrusted data (from storage or a file) into a valid SaveFile, migrating older versions. */
 export function parseSave(raw: unknown, migrations: Record<number, Migration> = MIGRATIONS, current = SCHEMA_VERSION): Result<SaveFile> {

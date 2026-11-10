@@ -146,3 +146,27 @@ describe('persistence controller', () => {
     expect(parsed.ok).toBe(true)
   })
 })
+
+describe('save migrations', () => {
+  it('upgrades a version-1 save by starting its job cycle fresh', async () => {
+    const g = makeGame({ unlock: ['KUL'] }) as unknown as Record<string, unknown>
+    delete g.jobEpoch
+    delete g.jobBatch
+    const v1 = { schemaVersion: 1, savedAt: 123, writerId: 'old', game: g }
+    const parsed = parseSave(v1)
+    if (!parsed.ok) throw new Error(parsed.error)
+    expect(parsed.value.schemaVersion).toBe(SCHEMA_VERSION)
+    expect(parsed.value.game.jobBatch).toBe(0)
+    expect(parsed.value.game.jobEpoch).toBeGreaterThan(0)
+    // and it loads into a playable game
+    const storage = createMemoryStorage(v1)
+    const p = new Persistence(storage, 'tab-m')
+    await p.boot()
+    expect(usePersistStore.getState().status).toBe('saved')
+    expect(useGameStore.getState().jobs.length).toBeGreaterThan(0)
+  })
+
+  it('still refuses a version-1 save whose game is damaged', () => {
+    expect(parseSave({ schemaVersion: 1, savedAt: 1, writerId: 'x', game: { airline: 'nope' } })).toMatchObject({ ok: false })
+  })
+})

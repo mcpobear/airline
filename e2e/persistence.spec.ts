@@ -67,7 +67,7 @@ test('a flight that ended while the browser was closed is reconciled on load, pa
   await page.locator('button:not([disabled])', { hasText: /^Load$/ }).first().click()
   await page.getByLabel('Destination').selectOption('KUL')
   await page.getByRole('button', { name: 'Dispatch flight' }).click()
-  await expect(page.getByRole('button', { name: /Follow on globe/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Follow on map/ })).toBeVisible()
 
   // Wait for a save that contains the flight, then pretend the tab was closed for an hour.
   await expect.poll(async () => (await readSave(page)).game.aircraft[0].flight !== null).toBe(true)

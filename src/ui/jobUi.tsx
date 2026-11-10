@@ -9,9 +9,9 @@ export const jobQuantityText = (j: Job) =>
 
 export function KindBadge({ kind }: { kind: Job['kind'] }) {
   return kind === 'passenger' ? (
-    <span className="rounded-md bg-cyan/15 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-cyan">PAX</span>
+    <span className="rounded-md bg-teal/15 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-teal">PAX</span>
   ) : (
-    <span className="rounded-md bg-purple/20 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-purple">CARGO</span>
+    <span className="rounded-md bg-sky/20 px-1.5 py-0.5 text-[10px] font-black tracking-wider text-sky">CARGO</span>
   )
 }
 
@@ -24,7 +24,7 @@ export function JobRow({ job, action, note }: { job: Job; action?: ReactNode; no
   const to = getAirport(job.destination)
   const km = from && to ? Math.round(distanceKm(from, to)) : 0
   return (
-    <div className="mt-1.5 rounded-xl bg-space/40 px-3 py-2">
+    <div className="mt-1.5 rounded-xl bg-paper/40 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <KindBadge kind={job.kind} />
@@ -51,4 +51,4 @@ export function JobRow({ job, action, note }: { job: Job; action?: ReactNode; no
 export const smallButton =
   'shrink-0 rounded-lg px-2.5 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-35'
 export const loadButton = `${smallButton} bg-orange text-white hover:brightness-110`
-export const ghostButton = `${smallButton} bg-white/10 text-muted hover:text-ink`
+export const ghostButton = `${smallButton} bg-ink/8 text-muted hover:text-ink`

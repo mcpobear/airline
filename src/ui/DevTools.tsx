@@ -6,7 +6,7 @@ import { useGameStore } from '../state/gameStore'
  */
 export function DevTools() {
   const s = useGameStore.getState
-  const btn = 'rounded-lg bg-white/10 px-2.5 py-1 text-xs font-extrabold hover:bg-white/15'
+  const btn = 'rounded-lg bg-ink/8 px-2.5 py-1 text-xs font-extrabold hover:bg-ink/12'
   return (
     <div className="rounded-2xl border border-dashed border-orange/60 p-4">
       <div className="font-extrabold text-orange">Developer tools (dev builds only)</div>

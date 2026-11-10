@@ -18,3 +18,9 @@ export function isLand(lat: number, lon: number): boolean {
   const idx = y * LAND_MASK_WIDTH + x
   return ((getBits()[idx >> 3] >> (idx & 7)) & 1) === 1
 }
+
+/** Raw mask bit at grid coordinates (x east from -180, y south from +90). 1 for land. */
+export function landBit(x: number, y: number): number {
+  const idx = y * LAND_MASK_WIDTH + x
+  return (getBits()[idx >> 3] >> (idx & 7)) & 1
+}

@@ -1,20 +1,29 @@
 @import '@fontsource-variable/nunito';
 @import 'tailwindcss';
 
+/**
+ * "Jet Age" palette: a 1960s airline poster. Cream paper, deep teal ink,
+ * burnt orange for actions, dusty blue for cargo. Roles, not hues:
+ *   paper  page background      panel/panel-2  cards and raised surfaces
+ *   ink    text                 muted          secondary text
+ *   orange primary action, HQ   teal           secondary action, selection, routes
+ *   sky    cargo and info       good/bad       outcomes
+ * Every solid-colour surface passes 4.5:1 against the text drawn on it.
+ */
 @theme {
   --font-sans: 'Nunito Variable', ui-rounded, system-ui, sans-serif;
-  --color-space: #050816;
-  --color-panel: #1a2152;
-  --color-panel-2: #232b66;
-  --color-line: #313a82;
-  --color-ink: #eef0ff;
-  --color-muted: #9aa3d6;
-  --color-cyan: #38d4f5;
-  --color-orange: #f0743e;
-  --color-orange-dark: #c9531f;
-  --color-purple: #8b7bff;
-  --color-good: #4ade80;
-  --color-bad: #ff5d5d;
+  --color-paper: #f2eadf;
+  --color-panel: #ffffff;
+  --color-panel-2: #f7f0e6;
+  --color-line: #ddd0be;
+  --color-ink: #1f3a3d;
+  --color-muted: #5c6a62;
+  --color-orange: #c2491c;
+  --color-orange-dark: #8e3312;
+  --color-teal: #1a6a66;
+  --color-sky: #3f6e8c;
+  --color-good: #2e7d52;
+  --color-bad: #b4332a;
 }
 
 html,
@@ -25,7 +34,7 @@ body,
 }
 
 body {
-  background: var(--color-space);
+  background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
   overflow: hidden;
@@ -34,5 +43,11 @@ body {
 
 .panel-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #3b4590 transparent;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+/* Keyboard focus stays visible on every control, light background included. */
+:where(button, select, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-teal);
+  outline-offset: 2px;
 }

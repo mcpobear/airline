@@ -81,11 +81,11 @@ export function AirportPanel({ iata }: { iata: string }) {
       <div className="flex flex-wrap gap-2">
         <ClassBadge cls={airport.classification} />
         {isHq ? (
-          <span className="rounded-full bg-[#ffb020]/20 px-2.5 py-0.5 text-xs font-extrabold text-[#ffb020]">Headquarters</span>
+          <span className="rounded-full bg-orange/15 px-2.5 py-0.5 text-xs font-extrabold text-orange">Headquarters</span>
         ) : isUnlocked ? (
           <span className="rounded-full bg-good/15 px-2.5 py-0.5 text-xs font-extrabold text-good">Unlocked</span>
         ) : (
-          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-extrabold text-muted">Locked</span>
+          <span className="rounded-full bg-ink/8 px-2.5 py-0.5 text-xs font-extrabold text-muted">Locked</span>
         )}
       </div>
 
@@ -120,7 +120,7 @@ export function AirportPanel({ iata }: { iata: string }) {
                 key={a.id}
                 type="button"
                 onClick={() => setSelection({ kind: 'aircraft', id: a.id })}
-                className="mt-1 flex w-full items-center justify-between rounded-lg bg-space/40 px-2.5 py-1.5 text-left transition hover:bg-space/70"
+                className="mt-1 flex w-full items-center justify-between rounded-lg bg-paper/40 px-2.5 py-1.5 text-left transition hover:bg-paper/70"
               >
                 <span className="font-extrabold">{a.name}</span>
                 <span className="text-xs font-bold text-muted">{getAircraftModel(a.modelId)?.model} · {a.registration}</span>
@@ -134,7 +134,7 @@ export function AirportPanel({ iata }: { iata: string }) {
                 key={a.id}
                 type="button"
                 onClick={() => setSelection({ kind: 'aircraft', id: a.id })}
-                className="mt-1 flex w-full items-center justify-between rounded-lg bg-space/40 px-2.5 py-1.5 text-left transition hover:bg-space/70"
+                className="mt-1 flex w-full items-center justify-between rounded-lg bg-paper/40 px-2.5 py-1.5 text-left transition hover:bg-paper/70"
               >
                 <span className="font-extrabold">{a.name}</span>
                 <span className="text-xs font-bold text-muted">from {a.flight!.from} · {formatDuration(a.flight!.arrivesAt - now)}</span>

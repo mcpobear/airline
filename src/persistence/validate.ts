@@ -31,6 +31,8 @@ export function validateGame(g: unknown): string | null {
   for (const k of ['nextAircraftNumber', 'nextJobNumber'] as const) {
     if (!num(g[k]) || !Number.isInteger(g[k]) || (g[k] as number) < 1) return `${k} is invalid`
   }
+  if (!num(g.jobEpoch) || g.jobEpoch < 0) return 'job clock is invalid'
+  if (!num(g.jobBatch) || !Number.isInteger(g.jobBatch) || (g.jobBatch as number) < 0) return 'job cycle is invalid'
   if (!Array.isArray(aircraft) || !Array.isArray(jobs)) return 'aircraft or jobs list is missing'
 
   const aircraftById = new Map<string, Record<string, unknown>>()

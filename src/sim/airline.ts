@@ -18,7 +18,7 @@ export function validateAirlineName(raw: string): Result<string> {
 }
 
 /** Creates a new airline. The HQ airport is unlocked automatically and free. */
-export function createGame(rawName: string, hqIata: string, seed: number): Result<GameCore> {
+export function createGame(rawName: string, hqIata: string, seed: number, now: number = Date.now()): Result<GameCore> {
   const name = validateAirlineName(rawName)
   if (!name.ok) return name
   if (!getAirport(hqIata)) return { ok: false, error: `Unknown airport "${hqIata}".` }
@@ -38,6 +38,8 @@ export function createGame(rawName: string, hqIata: string, seed: number): Resul
     seed,
     nextAircraftNumber: 1,
     nextJobNumber: 1,
+    jobEpoch: now,
+    jobBatch: 0,
   }
   // With only the HQ unlocked there is nowhere to send jobs yet; the first unlock creates them.
   return { ok: true, value: refillAirport(addStarterFleet(base), hqIata) }

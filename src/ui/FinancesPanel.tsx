@@ -38,7 +38,7 @@ export function FinancesPanel() {
               key={a.id}
               type="button"
               onClick={() => setSelection({ kind: 'aircraft', id: a.id })}
-              className="flex w-full items-center justify-between rounded-lg px-1 py-1.5 text-left transition hover:bg-space/50"
+              className="flex w-full items-center justify-between rounded-lg px-1 py-1.5 text-left transition hover:bg-paper/50"
             >
               <span className="font-extrabold">{a.name}</span>
               <span className="text-xs font-bold text-muted">

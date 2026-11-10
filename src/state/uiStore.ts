@@ -1,5 +1,18 @@
 import { create } from 'zustand'
 
+export type MapMode = 'flat' | 'globe'
+
+const MAP_MODE_KEY = 'global-airline.mapMode'
+
+/** Reading browser storage can throw (private mode, blocked storage), so a miss just means the default. */
+function storedMapMode(): MapMode {
+  try {
+    return localStorage.getItem(MAP_MODE_KEY) === 'globe' ? 'globe' : 'flat'
+  } catch {
+    return 'flat'
+  }
+}
+
 export type SectionId = 'fleet' | 'airports' | 'jobs' | 'market' | 'finances' | 'settings'
 
 /** What the right-hand context panel is showing.  */
@@ -31,6 +44,9 @@ interface UiState {
   previewRoute: { from: string; to: string } | null
   /** Aircraft the camera follows while it flies (null = free camera). */
   followAircraftId: string | null
+  /** Flat map or 3D globe. Remembered in this browser, not part of the save. */
+  mapMode: MapMode
+  setMapMode: (m: MapMode) => void
   setPreviewRoute: (r: { from: string; to: string } | null) => void
   setFollowAircraft: (id: string | null) => void
   setSection: (s: SectionId) => void
@@ -51,6 +67,15 @@ export const useUiStore = create<UiState>()((set) => ({
   autoRotate: true,
   previewRoute: null,
   followAircraftId: null,
+  mapMode: storedMapMode(),
+  setMapMode: (mapMode) => {
+    try {
+      localStorage.setItem(MAP_MODE_KEY, mapMode)
+    } catch {
+      // A browser that refuses storage just forgets the choice next time.
+    }
+    set({ mapMode })
+  },
   setPreviewRoute: (previewRoute) => set({ previewRoute }),
   setFollowAircraft: (followAircraftId) => set(followAircraftId ? { followAircraftId, autoRotate: false } : { followAircraftId }),
   setSection: (activeSection) => set({ activeSection }),

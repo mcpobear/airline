@@ -131,13 +131,15 @@ test('jobs appear after unlocking, and can be loaded onto and unloaded from an a
   await page.getByRole('button', { name: /KUL/ }).click()
   await page.getByRole('button', { name: /^Unlock ·/ }).click()
 
-  // Jobs board at HQ has jobs towards KUL; they carry no timers
+  // Jobs board at HQ has jobs towards KUL. Individual jobs carry no deadline;
+  // the board itself turns over on a clock, and the panel says when.
   await nav.getByRole('button', { name: 'Jobs' }).click()
   await expect(page.getByText(/\d+ waiting/)).toBeVisible()
   await expect(page.getByText('PAX').first()).toBeVisible()
   await expect(page.getByText(/→ KUL/).first()).toBeVisible()
-  await expect(page.getByText(/never expire/i)).toBeVisible()
-  await expect(page.getByText(/deadline|time left|hours left|expires in/i)).toHaveCount(0)
+  await expect(page.getByText(/These offers are replaced in/)).toBeVisible()
+  await expect(page.getByText(/already loaded stays with your aircraft/)).toBeVisible()
+  await expect(page.getByText(/deadline|hours left|expires in/i)).toHaveCount(0)
 
   // Load one job onto a starter aircraft, then unload it again
   await nav.getByRole('button', { name: 'Fleet' }).click()
@@ -185,7 +187,7 @@ test('core loop: load, dispatch, fly on the globe, land and get paid', async ({ 
   await dispatch.click()
 
   // The aircraft is airborne and the planning UI is gone
-  await expect(page.getByRole('button', { name: /Follow on globe/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Follow on map/ })).toBeVisible()
   await expect(page.getByText('SIN → KUL').first()).toBeVisible()
   await expect(dispatch).toHaveCount(0)
   await page.clock.fastForward(8_000)
@@ -196,7 +198,7 @@ test('core loop: load, dispatch, fly on the globe, land and get paid', async ({ 
   await expect(page.getByText(/landed at KUL: 1 job delivered/)).toBeVisible()
   await expect(page.getByText('Dispatch flight')).toBeVisible()
   await expect(page.getByText('Loaded jobs (0)')).toBeVisible()
-  await expect(page.getByRole('button', { name: /Follow on globe/ })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Follow on map/ })).toHaveCount(0)
   await page.screenshot({ path: 'test-results/phase5-landed.png' })
   expect(errors).toEqual([])
 })
@@ -231,5 +233,71 @@ test('finances screen, selling an aircraft with confirmation, and no dev tools i
   // The last aircraft can't be sold
   await page.locator('aside').first().getByRole('button', { name: /A220-100 #1/ }).click()
   await expect(page.getByRole('button', { name: 'Sell…' })).toBeDisabled()
+  expect(errors).toEqual([])
+})
+
+test('a brand-new airline explains why there are no jobs and points to the nearest airport', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('e.g. Merlion Air').fill('Hint Air')
+  await page.getByRole('button', { name: 'Choose headquarters' }).click()
+  await page.getByLabel('Search airports').fill('singapore')
+  await page.getByRole('button', { name: /SIN/ }).click()
+  await page.getByRole('button', { name: 'Launch airline' }).click()
+  await expect(page.getByText('No jobs yet — you need somewhere to fly to.')).toBeVisible()
+  await page.getByRole('button', { name: /^Show / }).click()
+  await page.getByRole('button', { name: /^Unlock ·/ }).click()
+  await expect(page.getByText('No jobs yet — you need somewhere to fly to.')).toHaveCount(0)
+})
+
+test('load-all fills an aircraft with one destination in a single click', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('e.g. Merlion Air').fill('Bulk Air')
+  await page.getByRole('button', { name: 'Choose headquarters' }).click()
+  await page.getByLabel('Search airports').fill('singapore')
+  await page.getByRole('button', { name: /SIN/ }).click()
+  await page.getByRole('button', { name: 'Launch airline' }).click()
+  const nav = page.getByRole('navigation')
+  await nav.getByRole('button', { name: 'Airports' }).click()
+  await page.getByLabel('Search airports').fill('kuala')
+  await page.getByRole('button', { name: /KUL/ }).click()
+  await page.getByRole('button', { name: /^Unlock ·/ }).click()
+
+  await nav.getByRole('button', { name: 'Fleet' }).click()
+  await page.locator('aside').first().getByRole('button', { name: /A220-100 #1/ }).click()
+  await expect(page.getByText('Loaded jobs (0)')).toBeVisible()
+
+  // Every waiting job at SIN is bound for KUL at this point, so one chip is offered.
+  await expect(page.getByText('Load all bound for')).toBeVisible()
+  await page.getByRole('button', { name: /^KUL/ }).first().click()
+  await expect(page.getByText(/Loaded \d+ (job|of)/)).toBeVisible()
+  await expect(page.getByText(/^Loaded jobs \((?!0\))\d+\)/)).toBeVisible()
+})
+
+test('the map can be switched between flat and globe, and the music can be muted', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  await page.goto('/')
+  await page.getByPlaceholder('e.g. Merlion Air').fill('Switch Air')
+  await page.getByRole('button', { name: 'Choose headquarters' }).click()
+  await page.getByLabel('Search airports').fill('singapore')
+  await page.getByRole('button', { name: /SIN/ }).click()
+  await page.getByRole('button', { name: 'Launch airline' }).click()
+
+  await page.getByRole('navigation').getByRole('button', { name: 'Settings' }).click()
+  const flat = page.getByRole('switch', { name: /Flat map/ })
+  await expect(flat).toHaveAttribute('aria-checked', 'true')
+  await expect(page.locator('canvas')).toBeVisible()
+  await flat.click()
+  await expect(flat).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('switch', { name: /Auto-rotate globe/ })).toBeVisible()
+  await expect(page.locator('canvas')).toBeVisible()
+  await page.reload() // the choice is remembered in this browser
+  await page.getByRole('navigation').getByRole('button', { name: 'Settings' }).click()
+  await expect(page.getByRole('switch', { name: /Flat map/ })).toHaveAttribute('aria-checked', 'false')
+
+  const mute = page.getByRole('button', { name: 'Mute lounge music' })
+  await expect(mute).toBeVisible()
+  await mute.click()
+  await expect(page.getByRole('button', { name: 'Play lounge music' })).toBeVisible()
   expect(errors).toEqual([])
 })

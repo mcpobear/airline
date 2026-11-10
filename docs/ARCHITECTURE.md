@@ -54,6 +54,28 @@ further from its destination. `sim/economy.ts` has resale, finance summaries and
 implementations) and `persistence.ts` (the `Persistence` controller: boot, debounced autosave, other-tab conflict detection,
 corrupt-save quarantine, import/export). The sim never imports it; `FlightClock` + `advanceFlights` reconcile time.
 
+**Flat map (`src/map/`):** an equirectangular projection where the world is `MAP_W x MAP_H` world units and
+`x = lon / 90`. `projection.ts` holds the wrapping maths (`wrapX`, `nearestX`, `unwrapLongitudes`); everything drawn is
+placed on the copy of the world nearest the camera, which is what makes the seam invisible and lets you pan east for
+ever. Routes are built in *unwrapped* longitude (`routePath.ts`) so a Pacific crossing is one continuous line rather
+than a jump across the map, and aircraft are interpolated along that same path so they always sit on their line.
+`landTexture.ts` paints the map once into an RGBA buffer (bilinear land mask -> blurred fields -> biome colour, shelf
+and a drawn coastline) and it is uploaded as a single repeating texture, so the map is one draw call. Custom pan/zoom
+controls replace OrbitControls, because the camera has to wrap. The globe (`src/globe/`) is unchanged and still
+selectable; `uiStore.mapMode` picks between them and is kept in browser storage, not in the save.
+
+**Aircraft shapes:** `globe/aircraftGeometry.ts` builds a low-poly airliner per `visualCategory` from real-ish
+proportions (span, sweep, engine count and position), normalised to length 1. Both renderers use the same geometry:
+seen from above on the flat map it reads as a top-down silhouette, and in 3D on the globe as a model.
+
+**Job board cycle:** jobs have no deadline, but each airport's *waiting* offers are replaced on a fixed cycle
+(`refreshJobsIfDue`). The cycle number is derived from `jobEpoch` and the clock rather than counted by a timer, so it
+is correct after any absence and only ever regenerates once. Loaded, in-flight and layover jobs are untouched.
+
+**Audio:** `audio/score.ts` is the arrangement as pure data (chords, bass, melody, brushes per bar, deterministic from
+the bar number) and is unit-tested without a browser; `audio/LoungeEngine.ts` renders it through Web Audio with a
+lookahead scheduler. It accepts any `BaseAudioContext`, so the output can be rendered offline and measured.
+
 **Deployment:** `vite.config.ts` reads `VITE_BASE` (set to `/<repo>/` by the workflow); local builds use `./`.
 No router, so refreshes need no rewrite rules. The globe (Three.js) is lazy-loaded as its own chunk.
 

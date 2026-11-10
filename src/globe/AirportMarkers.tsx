@@ -14,10 +14,10 @@ const MARKER_RADIUS = 1.032
 const BASE_SIZE = 0.0085
 
 const COLORS = {
-  hq: new THREE.Color('#ffb020'),
-  unlocked: new THREE.Color('#38d4f5'),
-  locked: new THREE.Color('#c9d2ff'),
-  selected: new THREE.Color('#ffffff'),
+  hq: new THREE.Color('#e0581e'),
+  unlocked: new THREE.Color('#0f8e86'),
+  locked: new THREE.Color('#fdf8f0'),
+  selected: new THREE.Color('#f2b705'),
 }
 
 type MarkerState = 'hq' | 'unlocked' | 'locked'
@@ -127,10 +127,10 @@ const overlaps = (a: Rect, b: Rect) => a[0] < b[2] + 2 && a[2] + 2 > b[0] && a[1
 const LABEL_BASE =
   'absolute left-0 top-0 whitespace-nowrap rounded-full px-2 py-[1px] text-[11px] font-extrabold leading-tight shadow-md'
 const LABEL_STYLE: Record<MarkerState | 'selected', string> = {
-  hq: 'bg-[#ffb020] text-[#1a1030]',
-  unlocked: 'bg-[#0f4a63]/95 text-cyan border border-cyan/60',
-  locked: 'bg-[#141a45]/90 text-[#e3e8ff]',
-  selected: 'bg-white text-[#141a45]',
+  hq: 'bg-orange text-white',
+  unlocked: 'bg-panel/95 text-teal border border-teal/40',
+  locked: 'bg-panel/80 text-muted',
+  selected: 'bg-ink text-paper',
 }
 
 /**

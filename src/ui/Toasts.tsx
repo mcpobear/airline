@@ -3,7 +3,7 @@ import { useNotifyStore, type ToastTone } from '../state/notifyStore'
 const TONE: Record<ToastTone, string> = {
   good: 'border-good/50 text-good',
   bad: 'border-bad/50 text-bad',
-  info: 'border-cyan/50 text-cyan',
+  info: 'border-teal/50 text-teal',
 }
 
 /** Non-blocking notifications; they fade by themselves and ignore pointer events. */
@@ -17,7 +17,7 @@ export function Toasts() {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`rounded-2xl border bg-panel/95 px-4 py-2.5 text-sm font-bold shadow-lg shadow-black/40 backdrop-blur-md ${TONE[t.tone]}`}
+          className={`rounded-2xl border bg-panel/95 px-4 py-2.5 text-sm font-bold shadow-lg shadow-ink/15 backdrop-blur-md ${TONE[t.tone]}`}
         >
           {t.text}
         </div>

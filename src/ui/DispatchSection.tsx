@@ -76,7 +76,7 @@ export function DispatchSection({ aircraft }: { aircraft: OwnedAircraft }) {
               <select
                 value={dest}
                 onChange={(e) => setDest(e.target.value)}
-                className="w-full rounded-xl bg-space/70 px-3 py-2 font-semibold"
+                className="w-full rounded-xl bg-paper/70 px-3 py-2 font-semibold"
               >
                 <option value="">Choose a destination…</option>
                 {options.map((o) => (
@@ -100,7 +100,7 @@ export function DispatchSection({ aircraft }: { aircraft: OwnedAircraft }) {
               type="button"
               disabled={!dest || !!blocker}
               onClick={go}
-              className="mt-3 w-full rounded-xl bg-cyan px-4 py-2 font-black text-space transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+              className="mt-3 w-full rounded-xl bg-teal px-4 py-2 font-black text-white transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Dispatch flight
             </button>
@@ -136,10 +136,10 @@ export function InFlightSection({ aircraft }: { aircraft: OwnedAircraft }) {
         aria-pressed={follow}
         onClick={() => setFollow(follow ? null : aircraft.id)}
         className={`mt-3 rounded-lg px-3 py-1 text-xs font-extrabold transition ${
-          follow ? 'bg-cyan text-space' : 'bg-cyan/15 text-cyan hover:bg-cyan/25'
+          follow ? 'bg-teal text-white' : 'bg-teal/15 text-teal hover:bg-teal/25'
         }`}
       >
-        {follow ? 'Following — tap to stop' : 'Follow on globe'}
+        {follow ? 'Following — tap to stop' : 'Follow on map'}
       </button>
     </div>
   )

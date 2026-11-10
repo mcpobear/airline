@@ -14,15 +14,20 @@ import { useUiStore } from '../state/uiStore'
 import { airportAccess, formatMoney } from './format'
 import { STATUS_LABEL, STATUS_TONE } from './FleetPanel'
 import { CloseIcon } from './icons'
+import { LoadAllChips } from './LoadAllChips'
+import { JobBoardTimer } from './JobBoardTimer'
 import { DispatchSection, InFlightSection } from './DispatchSection'
 import { formatDuration } from './format'
 import { useNow } from './useNow'
 import { Meter, profitTone, rightShell } from './panelParts'
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, hint, children }: { title: string; hint?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl bg-panel-2/70 p-4">
-      <div className="text-xs font-extrabold tracking-[0.14em] text-muted uppercase">{title}</div>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="text-xs font-extrabold tracking-[0.14em] text-muted uppercase">{title}</div>
+        {hint}
+      </div>
       <div className="mt-1 text-sm">{children}</div>
     </div>
   )
@@ -36,6 +41,7 @@ const Row = ({ k, v }: { k: string; v: React.ReactNode }) => (
 )
 
 function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: AircraftModel }) {
+  const unlockedCount = useGameStore((s) => s.unlockedAirports.length)
   const jobs = useGameStore((s) => s.jobs)
   const load = useGameStore((s) => s.loadJob)
   const unload = useGameStore((s) => s.unloadJob)
@@ -46,11 +52,11 @@ function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: A
   const used = aircraftLoad(jobs, aircraft.id)
   const potential = onboard.reduce((sum, j) => sum + j.reward, 0)
   const parked = aircraft.airport !== null && aircraft.flight === null
-  const waiting = parked
-    ? waitingJobsAt(jobs, aircraft.airport!)
-        .filter((j) => kind === 'all' || j.kind === kind)
-        .sort((a, b) => b.reward - a.reward)
-    : []
+  // Chips load every kind, so they count the whole board rather than the filtered view.
+  const allWaiting = parked ? waitingJobsAt(jobs, aircraft.airport!) : []
+  const waiting = allWaiting
+    .filter((j) => kind === 'all' || j.kind === kind)
+    .sort((a, b) => b.reward - a.reward)
   const act = (err: string | null) => err && notify(err, 'bad')
 
   return (
@@ -62,7 +68,7 @@ function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: A
         </div>
         <div>
           <div className="mb-1 flex justify-between"><span className="text-muted">Cargo</span><b>{used.cargoKg.toLocaleString('en-US')} / {model.cargoCapacityKg.toLocaleString('en-US')} kg</b></div>
-          <Meter value={used.cargoKg} max={model.cargoCapacityKg} tone="bg-purple" />
+          <Meter value={used.cargoKg} max={model.cargoCapacityKg} tone="bg-sky" />
         </div>
         <Row k="Free seats / cargo" v={`${model.passengerCapacity - used.pax} / ${(model.cargoCapacityKg - used.cargoKg).toLocaleString('en-US')} kg`} />
       </Section>
@@ -85,7 +91,10 @@ function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: A
         )}
       </Section>
 
-      <Section title={parked ? `Available at ${aircraft.airport} (${waitingJobsAt(jobs, aircraft.airport!).length})` : 'Available jobs'}>
+      <Section
+        title={parked ? `Available at ${aircraft.airport} (${waitingJobsAt(jobs, aircraft.airport!).length})` : 'Available jobs'}
+        hint={parked ? <JobBoardTimer compact /> : undefined}
+      >
         {!parked && <span className="text-muted">Jobs can only be loaded while parked.</span>}
         {parked && (
           <div className="mb-1 flex gap-1.5">
@@ -96,7 +105,7 @@ function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: A
                 aria-pressed={kind === k}
                 onClick={() => setKind(k)}
                 className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold capitalize transition ${
-                  kind === k ? 'bg-cyan/20 text-cyan' : 'bg-white/5 text-muted hover:text-ink'
+                  kind === k ? 'bg-teal/20 text-teal' : 'bg-ink/5 text-muted hover:text-ink'
                 }`}
               >
                 {k === 'passenger' ? 'Passengers' : k}
@@ -104,7 +113,14 @@ function LoadingSection({ aircraft, model }: { aircraft: OwnedAircraft; model: A
             ))}
           </div>
         )}
-        {parked && waiting.length === 0 && <span className="text-muted">No jobs of this kind waiting here.</span>}
+        {parked && allWaiting.length > 0 && <LoadAllChips aircraft={aircraft} waiting={allWaiting} />}
+        {parked && waiting.length === 0 && (
+          <span className="text-muted">
+            {unlockedCount < 2
+              ? 'No jobs yet: unlock a second airport (Airports tab) and jobs will appear here.'
+              : 'No jobs of this kind waiting here.'}
+          </span>
+        )}
         <div className="panel-scroll max-h-80 overflow-y-auto">
           {waiting.map((j) => {
             const blocker = jobFitBlocker(aircraft, model, jobs, j)
@@ -154,7 +170,7 @@ function SellSection({ aircraft }: { aircraft: OwnedAircraft }) {
           type="button"
           disabled={!!blocker}
           onClick={() => (confirm ? go() : setConfirm(true))}
-          className={`${confirm ? 'bg-bad text-white' : 'bg-white/10 text-muted hover:text-ink'} rounded-lg px-3 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-35`}
+          className={`${confirm ? 'bg-bad text-white' : 'bg-ink/8 text-muted hover:text-ink'} rounded-lg px-3 py-1 text-xs font-extrabold transition disabled:cursor-not-allowed disabled:opacity-35`}
         >
           {confirm ? `Confirm sale · ${formatMoney(value)}` : 'Sell…'}
         </button>
@@ -199,7 +215,7 @@ export function AircraftPanel({ id }: { id: string }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-lg bg-space/70 px-2 py-0.5 text-sm font-black tracking-wider">{aircraft.registration}</span>
+        <span className="rounded-lg bg-paper/70 px-2 py-0.5 text-sm font-black tracking-wider">{aircraft.registration}</span>
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${STATUS_TONE[aircraft.status]}`}>
           {STATUS_LABEL[aircraft.status]}
         </span>
@@ -213,9 +229,9 @@ export function AircraftPanel({ id }: { id: string }) {
           <button
             type="button"
             onClick={() => focusOn(pos.lat, pos.lon)}
-            className="mt-2 rounded-lg bg-cyan/15 px-3 py-1 text-xs font-extrabold text-cyan transition hover:bg-cyan/25"
+            className="mt-2 rounded-lg bg-teal/15 px-3 py-1 text-xs font-extrabold text-teal transition hover:bg-teal/25"
           >
-            Show on globe
+            Show on map
           </button>
         )}
       </Section>

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { getAircraftModel } from '../data/aircraft'
 import { purchaseAircraft } from './aircraft'
 import type { GameCore } from './core'
-import { aircraftLoad, dismissJob, jobFitBlocker, loadJob, unloadJob } from './loading'
+import { aircraftLoad, dismissJob, jobFitBlocker, loadAllTowards, loadJob, unloadJob } from './loading'
 import { refillThreshold, waitingJobsAt } from './jobs'
 import { getAirport } from '../data/airports'
 import { checkInvariants, makeGame } from './testUtils'
@@ -181,5 +181,61 @@ describe('dismissJob', () => {
     if (!l.ok) throw new Error(l.error)
     expect(dismissJob(l.value, job.id).ok).toBe(false)
     expect(dismissJob(g, 'nope').ok).toBe(false)
+  })
+})
+
+describe('loading everything for one destination', () => {
+  const setup = () => {
+    const g = makeGame({ unlock: ['KUL', 'BKK'] })
+    // Six small passenger jobs to KUL, one to BKK, so only the KUL ones should load.
+    const waiting = waitingJobsAt(g.jobs, 'SIN')
+    const jobs = g.jobs.map((j, i) =>
+      waiting.includes(j)
+        ? { ...j, kind: 'passenger' as const, quantity: 20, reward: 1000 + i, destination: i % 7 === 0 ? 'BKK' : 'KUL' }
+        : j,
+    )
+    return { ...g, jobs }
+  }
+
+  it('fills the aircraft with jobs for that destination, best paying first', () => {
+    const g = setup()
+    const id = g.aircraft[0].id
+    const model = getAircraftModel(g.aircraft[0].modelId)!
+    const r = loadAllTowards(g, id, 'KUL')
+    if (!r.ok) throw new Error(r.error)
+    expect(r.value.loaded).toBeGreaterThan(1)
+    const onboard = r.value.game.jobs.filter((j) => j.aircraftId === id)
+    expect(onboard.every((j) => j.destination === 'KUL')).toBe(true)
+    expect(aircraftLoad(r.value.game.jobs, id).pax).toBeLessThanOrEqual(model.passengerCapacity)
+    // Of the jobs that were on the board when loading started, the best-paying went on.
+    // (Loading tops the board back up, so later arrivals are not part of this comparison.)
+    const offered = new Map(
+      g.jobs.filter((j) => j.destination === 'KUL' && j.currentAirport === 'SIN').map((j) => [j.id, j.reward]),
+    )
+    const takenMin = Math.min(...onboard.map((j) => j.reward))
+    const leftMax = Math.max(
+      ...r.value.game.jobs
+        .filter((j) => offered.has(j.id) && j.aircraftId === null)
+        .map((j) => j.reward),
+      -Infinity,
+    )
+    if (Number.isFinite(leftMax)) expect(takenMin).toBeGreaterThanOrEqual(leftMax)
+    expect(checkInvariants(r.value.game)).toEqual([])
+  })
+
+  it('reports what would not fit instead of failing', () => {
+    const g = setup()
+    const r = loadAllTowards(g, g.aircraft[0].id, 'KUL')
+    if (!r.ok) throw new Error(r.error)
+    expect(r.value.leftBehind).toBeGreaterThanOrEqual(0)
+    expect(r.value.loaded + r.value.leftBehind).toBe(
+      g.jobs.filter((j) => j.destination === 'KUL' && j.currentAirport === 'SIN' && j.aircraftId === null).length,
+    )
+  })
+
+  it('refuses when nothing is waiting for that destination', () => {
+    const g = setup()
+    expect(loadAllTowards(g, g.aircraft[0].id, 'HND')).toMatchObject({ ok: false })
+    expect(loadAllTowards(g, 'nope', 'KUL')).toMatchObject({ ok: false })
   })
 })

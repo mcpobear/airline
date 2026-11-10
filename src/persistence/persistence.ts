@@ -69,6 +69,7 @@ export class Persistence {
     }
     useGameStore.getState().loadGame(parsed.value.game)
     this.lastSeen = parsed.value.savedAt
+    // Lands flights and turns over job boards that came due while away.
     const landed = useGameStore.getState().tick(now, true)
     set({ status: 'saved', message: null, lastSavedAt: parsed.value.savedAt, rawCorrupt: null })
     if (landed.length > 0) {

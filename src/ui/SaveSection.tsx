@@ -46,11 +46,11 @@ export function SaveSection() {
           type="button"
           disabled={!hasAirline}
           onClick={() => { const j = p.exportJson(); if (j) downloadText('global-airline-save.json', j) }}
-          className="rounded-xl bg-white/10 px-3 py-2 text-sm font-extrabold transition hover:bg-white/15 disabled:opacity-40"
+          className="rounded-xl bg-ink/8 px-3 py-2 text-sm font-extrabold transition hover:bg-ink/12 disabled:opacity-40"
         >
           Export save
         </button>
-        <button type="button" onClick={() => input.current?.click()} className="rounded-xl bg-white/10 px-3 py-2 text-sm font-extrabold transition hover:bg-white/15">
+        <button type="button" onClick={() => input.current?.click()} className="rounded-xl bg-ink/8 px-3 py-2 text-sm font-extrabold transition hover:bg-ink/12">
           Import save…
         </button>
         <input ref={input} type="file" accept="application/json,.json" aria-label="Import save file" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
@@ -62,7 +62,7 @@ export function SaveSection() {
             <button type="button" className="rounded-lg bg-bad px-3 py-1.5 text-xs font-black text-white" onClick={() => { void p.applyImport(pending); setPending(null); notify('Save imported.', 'good') }}>
               Yes, replace
             </button>
-            <button type="button" className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-extrabold" onClick={() => setPending(null)}>
+            <button type="button" className="rounded-lg bg-ink/8 px-3 py-1.5 text-xs font-extrabold" onClick={() => setPending(null)}>
               Cancel
             </button>
           </div>
@@ -86,7 +86,7 @@ export function ImportSave() {
   }
   return (
     <>
-      <button type="button" onClick={() => input.current?.click()} className="font-extrabold text-cyan underline">
+      <button type="button" onClick={() => input.current?.click()} className="font-extrabold text-teal underline">
         Import it
       </button>
       <input ref={input} type="file" accept="application/json,.json" aria-label="Import save file" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />

@@ -7,9 +7,9 @@ import { CloseIcon } from './icons'
 import { formatCoord } from './format'
 
 const shell =
-  'fixed top-[76px] right-2 bottom-2 z-10 flex w-[327px] flex-col rounded-3xl border border-line/60 bg-panel/90 p-5 shadow-xl shadow-black/40 backdrop-blur-md'
+  'fixed top-[76px] right-2 bottom-2 z-10 flex w-[327px] flex-col rounded-3xl border border-line/60 bg-panel/90 p-5 shadow-xl shadow-ink/15 backdrop-blur-md'
 
-/** Context panel: shows the selected airport or aircraft, or a clicked globe location. */
+/** Context panel: shows the selected airport or aircraft, or a clicked map location. */
 export function RightPanel() {
   const selection = useUiStore((s) => s.selection)
   const setSelection = useUiStore((s) => s.setSelection)
@@ -24,7 +24,7 @@ export function RightPanel() {
       <aside className={shell}>
         <h2 className="text-2xl font-black">Nothing selected</h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Click an airport on the globe, or pick an airport or aircraft from the side panel, to see its details.
+          Click an airport on the map, or pick an airport or aircraft from the side panel, to see its details.
         </p>
       </aside>
     )
@@ -36,7 +36,7 @@ export function RightPanel() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-black">Location</h2>
-          <span className="mt-1 inline-block rounded-full bg-cyan/15 px-3 py-0.5 text-xs font-extrabold text-cyan">
+          <span className="mt-1 inline-block rounded-full bg-teal/15 px-3 py-0.5 text-xs font-extrabold text-teal">
             {land ? 'Land' : 'Ocean'}
           </span>
         </div>

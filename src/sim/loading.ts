@@ -115,3 +115,53 @@ export function dismissJob(game: GameCore, jobId: string): Result<GameCore> {
   const next = { ...game, jobs: game.jobs.filter((j) => j.id !== jobId) }
   return { ok: true, value: refillAirport(next, job.currentAirport!) }
 }
+
+export interface BulkLoadResult {
+  game: GameCore
+  /** How many jobs were loaded. */
+  loaded: number
+  /** Jobs for that destination that were left behind because the aircraft filled up. */
+  leftBehind: number
+}
+
+/**
+ * Loads as many jobs for one destination as the aircraft can take, best-paying
+ * first, so a player doesn't have to click a full load one job at a time.
+ * Jobs that no longer fit are simply left on the board.
+ */
+export function loadAllTowards(game: GameCore, aircraftId: string, destination: string): Result<BulkLoadResult> {
+  const aircraft = game.aircraft.find((a) => a.id === aircraftId)
+  if (!aircraft) return { ok: false, error: 'Unknown aircraft.' }
+  if (aircraft.airport === null) return { ok: false, error: `${aircraft.name} must be parked to load jobs.` }
+
+  const here = aircraft.airport
+  const candidates = game.jobs
+    .filter(
+      (j) =>
+        j.destination === destination &&
+        j.aircraftId === null &&
+        j.currentAirport === here &&
+        (j.status === 'waiting' || j.status === 'at_layover'),
+    )
+    .sort((a, b) => b.reward - a.reward || a.id.localeCompare(b.id))
+
+  if (candidates.length === 0) {
+    return { ok: false, error: `No jobs at ${here} are waiting for ${destination}.` }
+  }
+
+  let g = game
+  let loaded = 0
+  for (const job of candidates) {
+    // Each attempt is checked afresh: capacity shrinks as jobs go on.
+    const r = loadJob(g, aircraftId, job.id)
+    if (r.ok) {
+      g = r.value
+      loaded++
+    }
+  }
+  if (loaded === 0) {
+    const model = getAircraftModel(aircraft.modelId)!
+    return { ok: false, error: jobFitBlocker(aircraft, model, g.jobs, candidates[0]) ?? 'Nothing could be loaded.' }
+  }
+  return { ok: true, value: { game: g, loaded, leftBehind: candidates.length - loaded } }
+}

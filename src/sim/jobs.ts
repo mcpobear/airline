@@ -157,3 +157,37 @@ export function onAirportUnlocked(game: GameCore, iata: string): GameCore {
   for (const f of feeders) g = ensureJobsTowards(g, f, iata, J.jobsToNewAirport)
   return g
 }
+
+/**
+ * Job boards are replaced on a fixed cycle rather than lingering for ever, so
+ * what is on offer keeps changing. The cycle is derived from the clock, never
+ * from a timer, so a player who closes the browser for an hour comes back to
+ * one fresh board rather than six stale ones.
+ *
+ * What survives a refresh:
+ *   - jobs loaded on an aircraft, in the air or on the ground
+ *   - jobs left at a layover, which keep waiting for a later leg
+ * Only untouched jobs on an airport's own board are replaced.
+ */
+export function jobBatchAt(game: Pick<GameCore, 'jobEpoch'>, now: number): number {
+  return Math.max(0, Math.floor((now - game.jobEpoch) / BALANCE.jobs.refreshIntervalMs))
+}
+
+/** When the boards next turn over (epoch ms). */
+export function nextJobRefreshAt(game: Pick<GameCore, 'jobEpoch' | 'jobBatch'>, now: number): number {
+  return game.jobEpoch + (jobBatchAt(game, now) + 1) * BALANCE.jobs.refreshIntervalMs
+}
+
+/** Replaces every airport's waiting jobs if the cycle has moved on. Safe to call at any rate. */
+export function refreshJobsIfDue(game: GameCore, now: number): { game: GameCore; refreshed: boolean } {
+  const batch = jobBatchAt(game, now)
+  if (batch <= game.jobBatch) return { game, refreshed: false }
+  let g: GameCore = {
+    ...game,
+    jobBatch: batch,
+    jobs: game.jobs.filter((j) => j.status !== 'waiting'),
+  }
+  for (const iata of g.unlockedAirports) g = refillAirport(g, iata)
+  g = ensureReturnJobs(g, g.airline.hq)
+  return { game: g, refreshed: true }
+}

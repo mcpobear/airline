@@ -1,9 +1,11 @@
 import { create } from 'zustand'
 import { purchaseAircraft as simPurchase } from '../sim/aircraft'
 import { createGame, unlockAirport as simUnlock } from '../sim/airline'
+import { refreshJobsIfDue } from '../sim/jobs'
 import { advanceFlights, type ArrivalEvent, dispatchFlight as simDispatch } from '../sim/flight'
 import { sellAircraft as simSell, takeRescueFunding as simRescue } from '../sim/economy'
 import { useNotifyStore } from './notifyStore'
+import { loadAllTowards as simLoadAll } from '../sim/loading'
 import { dismissJob as simDismiss, loadJob as simLoad, unloadJob as simUnload } from '../sim/loading'
 import type { GameCore, GameSettings, Result } from '../sim/core'
 import type { AirlineProfile, Job, OwnedAircraft } from '../types/game'
@@ -22,11 +24,15 @@ interface GameState {
   seed: number
   nextAircraftNumber: number
   nextJobNumber: number
+  jobEpoch: number
+  jobBatch: number
   /** Return an error message, or null on success. */
   createAirline: (name: string, hqIata: string) => string | null
   unlockAirport: (iata: string) => string | null
   purchaseAircraft: (modelId: string) => Result<OwnedAircraft>
   loadJob: (aircraftId: string, jobId: string) => string | null
+  /** Loads every waiting job for one destination that still fits. */
+  loadAllTowards: (aircraftId: string, destination: string) => BulkLoadOutcome
   unloadJob: (aircraftId: string, jobId: string) => string | null
   dismissJob: (jobId: string) => string | null
   dispatchFlight: (aircraftId: string, destIata: string) => string | null
@@ -51,7 +57,11 @@ const EMPTY = {
   seed: 0,
   nextAircraftNumber: 1,
   nextJobNumber: 1,
+  jobEpoch: 0,
+  jobBatch: 0,
 }
+
+export type BulkLoadOutcome = { ok: true; loaded: number; leftBehind: number } | { ok: false; error: string }
 
 export const toCore = (s: GameState): GameCore | null =>
   s.airline
@@ -64,6 +74,8 @@ export const toCore = (s: GameState): GameCore | null =>
         seed: s.seed,
         nextAircraftNumber: s.nextAircraftNumber,
         nextJobNumber: s.nextJobNumber,
+        jobEpoch: s.jobEpoch,
+        jobBatch: s.jobBatch,
       }
     : null
 
@@ -105,6 +117,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
     set(r.value.game)
     return { ok: true, value: r.value.aircraft }
   },
+  loadAllTowards: (aircraftId, destination) => {
+    const core = toCore(get())
+    if (!core) return { ok: false, error: 'Create an airline first.' }
+    const r = simLoadAll(core, aircraftId, destination)
+    if (!r.ok) return { ok: false, error: r.error }
+    set(r.value.game)
+    return { ok: true, loaded: r.value.loaded, leftBehind: r.value.leftBehind }
+  },
   loadJob: (aircraftId, jobId) => applyJobAction(set, get, (c) => simLoad(c, aircraftId, jobId)),
   unloadJob: (aircraftId, jobId) => applyJobAction(set, get, (c) => simUnload(c, aircraftId, jobId)),
   dismissJob: (jobId) => applyJobAction(set, get, (c) => simDismiss(c, jobId)),
@@ -113,9 +133,14 @@ export const useGameStore = create<GameState>()((set, get) => ({
   tick: (now, silent = false) => {
     const c = toCore(get())
     if (!c) return []
-    const { game, events } = advanceFlights(c, now)
-    if (game === c) return []
-    set(game)
+    const landed = advanceFlights(c, now)
+    const boards = refreshJobsIfDue(landed.game, now)
+    const { events } = landed
+    if (boards.game === c) return []
+    set(boards.game)
+    if (boards.refreshed && !silent) {
+      useNotifyStore.getState().push('Job boards refreshed at every airport.', 'info')
+    }
     if (!silent) {
       const notify = useNotifyStore.getState().push
       for (const e of events) {

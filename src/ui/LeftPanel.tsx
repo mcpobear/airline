@@ -8,6 +8,7 @@ import { ClassBadge, IataBadge } from './airportUi'
 import { formatMoney } from './format'
 import { SearchIcon } from './icons'
 
+import { MusicSettings } from './MusicSettings'
 import { DevTools } from './DevTools'
 import { SaveSection } from './SaveSection'
 import { FinancesPanel } from './FinancesPanel'
@@ -40,7 +41,7 @@ function Toggle({
         <span className="block text-xs text-muted">{hint}</span>
       </span>
       <span
-        className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-cyan' : 'bg-line'}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-teal' : 'bg-line'}`}
       >
         <span
           className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${checked ? 'left-6' : 'left-1'}`}
@@ -81,7 +82,7 @@ function AirportsList() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search city, country or code"
             aria-label="Search airports"
-            className="w-full rounded-xl border border-line bg-space/60 py-2.5 pr-3 pl-10 text-sm font-bold outline-none transition focus:border-cyan"
+            className="w-full rounded-xl border border-line bg-paper/60 py-2.5 pr-3 pl-10 text-sm font-bold outline-none transition focus:border-teal"
           />
         </label>
         <div className="mt-2 flex items-center justify-between text-xs font-bold text-muted">
@@ -92,7 +93,7 @@ function AirportsList() {
             type="button"
             onClick={() => setOnlyUnlocked((v) => !v)}
             aria-pressed={onlyUnlocked}
-            className={`rounded-full px-2.5 py-1 transition ${onlyUnlocked ? 'bg-cyan/20 text-cyan' : 'bg-white/5 hover:text-ink'}`}
+            className={`rounded-full px-2.5 py-1 transition ${onlyUnlocked ? 'bg-teal/20 text-teal' : 'bg-ink/5 hover:text-ink'}`}
           >
             Unlocked only
           </button>
@@ -114,7 +115,7 @@ function AirportsList() {
                 focusOn(a.lat, a.lon)
               }}
               className={`mb-1.5 flex w-full items-center gap-2 rounded-2xl p-2.5 text-left transition ${
-                active ? 'bg-panel-2 ring-1 ring-cyan' : 'bg-panel-2/50 hover:bg-panel-2'
+                active ? 'bg-panel-2 ring-1 ring-teal' : 'bg-panel-2/50 hover:bg-panel-2'
               }`}
             >
               <IataBadge iata={a.iata} />
@@ -125,7 +126,7 @@ function AirportsList() {
               <span className="flex flex-col items-end gap-1">
                 <ClassBadge cls={a.classification} />
                 {isHq ? (
-                  <span className="text-xs font-extrabold text-[#ffb020]">HQ</span>
+                  <span className="text-xs font-extrabold text-orange">HQ</span>
                 ) : isUnlocked ? (
                   <span className="text-xs font-extrabold text-good">Unlocked</span>
                 ) : (
@@ -194,6 +195,8 @@ export function LeftPanel() {
   const section = useUiStore((s) => s.activeSection)
   const autoRotate = useUiStore((s) => s.autoRotate)
   const setAutoRotate = useUiStore((s) => s.setAutoRotate)
+  const mapMode = useUiStore((s) => s.mapMode)
+  const setMapMode = useUiStore((s) => s.setMapMode)
 
   if (section === 'settings') {
     return (
@@ -201,11 +204,24 @@ export function LeftPanel() {
         <Header title="Settings" />
         <div className="panel-scroll flex flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4">
           <Toggle
-            label="Auto-rotate globe"
-            hint="Slowly spins the globe until you take control."
-            checked={autoRotate}
-            onChange={setAutoRotate}
+            label="Flat map"
+            hint={
+              mapMode === 'flat'
+                ? 'An equirectangular world map that wraps around, so you can fly east or west to the Americas.'
+                : 'Currently showing the 3D globe. Switch back to the flat map.'
+            }
+            checked={mapMode === 'flat'}
+            onChange={(v) => setMapMode(v ? 'flat' : 'globe')}
           />
+          {mapMode === 'globe' && (
+            <Toggle
+              label="Auto-rotate globe"
+              hint="Slowly spins the globe until you take control."
+              checked={autoRotate}
+              onChange={setAutoRotate}
+            />
+          )}
+          <MusicSettings />
           <FutureAircraftToggle />
           <SaveSection />
           {import.meta.env.DEV && <DevTools />}

@@ -66,7 +66,9 @@ export type JobStatus = 'waiting' | 'loaded' | 'in_transit' | 'at_layover' | 'de
 
 /**
  * A passenger or cargo job. `destination` is the FINAL destination: it keeps it across layovers
- * and is paid only on delivery there. Jobs have no deadline and never expire.
+ * and is paid only on delivery there. Jobs have no deadline: nothing is lost by
+ * taking your time. Offers waiting on an airport's board are replaced on a
+ * timer, but jobs already loaded, in the air or left at a layover are not.
  */
 export interface Job {
   id: string

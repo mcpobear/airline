@@ -55,7 +55,7 @@ function ModelCard({ model }: { model: AircraftModel }) {
         <div className="text-lg font-black text-good">{formatMoney(model.price)}</div>
       </div>
       {!model.inService && (
-        <div className="mt-2 rounded-xl bg-purple/15 px-2.5 py-1.5 text-xs font-bold text-purple">
+        <div className="mt-2 rounded-xl bg-sky/15 px-2.5 py-1.5 text-xs font-bold text-sky">
           Not yet in service · {model.serviceNote}
         </div>
       )}
@@ -103,7 +103,7 @@ export function MarketPanel() {
             aria-pressed={maker === m}
             onClick={() => setMaker(m)}
             className={`rounded-full px-3 py-1 text-xs font-extrabold transition ${
-              maker === m ? 'bg-cyan/20 text-cyan' : 'bg-white/5 text-muted hover:text-ink'
+              maker === m ? 'bg-teal/20 text-teal' : 'bg-ink/5 text-muted hover:text-ink'
             }`}
           >
             {m}

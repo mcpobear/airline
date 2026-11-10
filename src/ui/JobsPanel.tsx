@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { getAirport } from '../data/airports'
 import { waitingJobsAt } from '../sim/jobs'
+import { JobBoardTimer } from './JobBoardTimer'
 import { useGameStore } from '../state/gameStore'
 import { useNotifyStore } from '../state/notifyStore'
 import { useUiStore } from '../state/uiStore'
@@ -40,7 +41,7 @@ export function JobsPanel() {
           aria-label="Airport"
           value={airport}
           onChange={(e) => setJobsAirport(e.target.value)}
-          className="w-full rounded-xl border border-line bg-space/60 px-3 py-2.5 text-sm font-bold outline-none focus:border-cyan"
+          className="w-full rounded-xl border border-line bg-paper/60 px-3 py-2.5 text-sm font-bold outline-none focus:border-teal"
         >
           {options.map((iata) => (
             <option key={iata} value={iata}>
@@ -56,7 +57,7 @@ export function JobsPanel() {
               aria-pressed={kind === id}
               onClick={() => setKind(id)}
               className={`rounded-full px-3 py-1 text-xs font-extrabold transition ${
-                kind === id ? 'bg-cyan/20 text-cyan' : 'bg-white/5 text-muted hover:text-ink'
+                kind === id ? 'bg-teal/20 text-teal' : 'bg-ink/5 text-muted hover:text-ink'
               }`}
             >
               {label}
@@ -65,9 +66,7 @@ export function JobsPanel() {
         </div>
       </div>
       <div className="panel-scroll flex-1 overflow-y-auto px-3 pb-4">
-        <p className="px-1 pb-1 text-xs text-muted">
-          Select a parked aircraft to load these. Jobs never expire.
-        </p>
+        <JobBoardTimer />
         {shown.length === 0 && (
           <p className="px-1 py-4 text-sm text-muted">
             {unlocked.length < 2

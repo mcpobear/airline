@@ -10,12 +10,12 @@ import { formatMoney } from './format'
 import { SearchIcon } from './icons'
 
 const shell =
-  'fixed top-[76px] bottom-2 left-2 z-10 flex w-[380px] max-w-[calc(100vw-16px)] flex-col rounded-3xl border border-line/60 bg-panel/90 shadow-xl shadow-black/40 backdrop-blur-md'
+  'fixed top-[76px] bottom-2 left-2 z-10 flex w-[380px] max-w-[calc(100vw-16px)] flex-col rounded-3xl border border-line/60 bg-panel/90 shadow-xl shadow-ink/15 backdrop-blur-md'
 const primary =
   'w-full rounded-2xl bg-orange px-5 py-3 text-base font-black text-white shadow-[0_4px_0_0_var(--color-orange-dark)] transition hover:brightness-110 active:translate-y-[2px] active:shadow-[0_2px_0_0_var(--color-orange-dark)] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none'
 
 /**
- * New-airline flow in the left panel slot so the globe stays visible and
+ * New-airline flow in the left panel slot so the map stays visible and
  * interactive: clicking an airport marker also picks the headquarters.
  */
 export function NewAirline() {
@@ -52,7 +52,7 @@ export function NewAirline() {
     return (
       <aside className={shell}>
         <div className="px-5 pt-5">
-          <div className="text-xs font-extrabold tracking-[0.14em] text-cyan uppercase">Step 1 of 2</div>
+          <div className="text-xs font-extrabold tracking-[0.14em] text-teal uppercase">Step 1 of 2</div>
           <h2 className="text-2xl font-black">Name your airline</h2>
         </div>
         <div className="flex flex-1 flex-col gap-4 p-5">
@@ -68,7 +68,7 @@ export function NewAirline() {
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && nameCheck.ok && setStep('hq')}
               placeholder="e.g. Merlion Air"
-              className="mt-1 w-full rounded-2xl border border-line bg-space/60 px-4 py-3 text-lg font-bold outline-none transition focus:border-cyan"
+              className="mt-1 w-full rounded-2xl border border-line bg-paper/60 px-4 py-3 text-lg font-bold outline-none transition focus:border-teal"
             />
           </label>
           <div className="mt-auto">
@@ -87,9 +87,9 @@ export function NewAirline() {
   return (
     <aside className={shell}>
       <div className="px-5 pt-5">
-        <div className="text-xs font-extrabold tracking-[0.14em] text-cyan uppercase">Step 2 of 2</div>
+        <div className="text-xs font-extrabold tracking-[0.14em] text-teal uppercase">Step 2 of 2</div>
         <h2 className="text-2xl font-black">Choose headquarters</h2>
-        <p className="mt-1 text-sm text-muted">Pick a city below or click an airport on the globe.</p>
+        <p className="mt-1 text-sm text-muted">Pick a city below or click an airport on the map.</p>
         <label className="relative mt-3 block">
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted">
             <SearchIcon />
@@ -99,7 +99,7 @@ export function NewAirline() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search city, country or code"
             aria-label="Search airports"
-            className="w-full rounded-xl border border-line bg-space/60 py-2.5 pr-3 pl-10 text-sm font-bold outline-none transition focus:border-cyan"
+            className="w-full rounded-xl border border-line bg-paper/60 py-2.5 pr-3 pl-10 text-sm font-bold outline-none transition focus:border-teal"
           />
         </label>
       </div>
@@ -118,7 +118,7 @@ export function NewAirline() {
                 onClick={() => pick(a.iata)}
                 aria-pressed={draftHq === a.iata}
                 className={`flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left transition ${
-                  draftHq === a.iata ? 'bg-orange/25 ring-1 ring-orange' : 'hover:bg-white/5'
+                  draftHq === a.iata ? 'bg-orange/25 ring-1 ring-orange' : 'hover:bg-ink/5'
                 }`}
               >
                 <IataBadge iata={a.iata} />

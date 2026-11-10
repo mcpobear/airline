@@ -2,7 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { BALANCE } from '../config/balance'
 import { getAirport } from '../data/airports'
 import { distanceKm } from './geo'
-import { ensureJobsTowards, jobReward, refillAirport, targetJobCount, waitingJobsAt } from './jobs'
+import {
+  ensureJobsTowards,
+  jobReward,
+  nextJobRefreshAt,
+  refillAirport,
+  refreshJobsIfDue,
+  targetJobCount,
+  waitingJobsAt,
+} from './jobs'
+import { loadJob } from './loading'
+import type { GameCore } from './core'
 import { checkInvariants, makeGame } from './testUtils'
 
 const J = BALANCE.jobs
@@ -122,5 +132,74 @@ describe('jobReward', () => {
   it('applies random variation', () => {
     const km = distanceKm(sin, kul)
     expect(jobReward('passenger', 30, km, sin, kul, 0.1)).toBeGreaterThan(jobReward('passenger', 30, km, sin, kul, -0.1))
+  })
+})
+
+describe('job board refresh', () => {
+  const INTERVAL = BALANCE.jobs.refreshIntervalMs
+  const base = () => {
+    const g = makeGame({ unlock: ['KUL', 'BKK'] })
+    return { ...g, jobEpoch: 1_000_000, jobBatch: 0 }
+  }
+
+  it('leaves the boards alone until the cycle is up', () => {
+    const g = base()
+    const before = g.jobs.map((j) => j.id)
+    const r = refreshJobsIfDue(g, g.jobEpoch + INTERVAL - 1)
+    expect(r.refreshed).toBe(false)
+    expect(r.game).toBe(g)
+    expect(r.game.jobs.map((j) => j.id)).toEqual(before)
+  })
+
+  it('replaces waiting jobs with a fresh board', () => {
+    const g = base()
+    const before = new Set(waitingJobsAt(g.jobs, 'SIN').map((j) => j.id))
+    expect(before.size).toBeGreaterThan(0)
+    const r = refreshJobsIfDue(g, g.jobEpoch + INTERVAL)
+    expect(r.refreshed).toBe(true)
+    const after = waitingJobsAt(r.game.jobs, 'SIN')
+    expect(after.length).toBeGreaterThan(0)
+    expect(after.some((j) => before.has(j.id))).toBe(false)
+    expect(r.game.jobBatch).toBe(1)
+    expect(checkInvariants(r.game)).toEqual([])
+  })
+
+  it('keeps loaded jobs and jobs waiting at a layover', () => {
+    const g0 = base()
+    const loadedJob = waitingJobsAt(g0.jobs, 'SIN')[0]
+    const loaded = loadJob(g0, g0.aircraft[0].id, loadedJob.id)
+    if (!loaded.ok) throw new Error(loaded.error)
+    // A job parked at a layover: onboard, flown elsewhere, then set down.
+    const layover = { ...waitingJobsAt(loaded.value.jobs, 'SIN')[0], status: 'at_layover' as const, currentAirport: 'KUL', aircraftId: null }
+    const g: GameCore = { ...loaded.value, jobs: loaded.value.jobs.map((j) => (j.id === layover.id ? layover : j)) }
+
+    const r = refreshJobsIfDue(g, g.jobEpoch + INTERVAL)
+    expect(r.game.jobs.find((j) => j.id === loadedJob.id)).toMatchObject({ status: 'loaded' })
+    expect(r.game.jobs.find((j) => j.id === layover.id)).toMatchObject({ status: 'at_layover', currentAirport: 'KUL' })
+    expect(r.game.aircraft[0].loadedJobIds).toContain(loadedJob.id)
+    expect(checkInvariants(r.game)).toEqual([])
+  })
+
+  it('catches up with one fresh board after a long absence, not one per cycle', () => {
+    const g = base()
+    const r = refreshJobsIfDue(g, g.jobEpoch + INTERVAL * 7.5)
+    expect(r.game.jobBatch).toBe(7)
+    // Seven cycles would have burned seven boards' worth of job numbers.
+    const oneCycle = refreshJobsIfDue(g, g.jobEpoch + INTERVAL)
+    expect(r.game.nextJobNumber).toBe(oneCycle.game.nextJobNumber)
+    expect(refreshJobsIfDue(r.game, g.jobEpoch + INTERVAL * 7.9).refreshed).toBe(false)
+  })
+
+  it('is deterministic for the same state and time', () => {
+    const g = base()
+    const a = refreshJobsIfDue(g, g.jobEpoch + INTERVAL).game
+    const b = refreshJobsIfDue(g, g.jobEpoch + INTERVAL).game
+    expect(a.jobs).toEqual(b.jobs)
+  })
+
+  it('reports when the next refresh is due', () => {
+    const g = base()
+    expect(nextJobRefreshAt(g, g.jobEpoch)).toBe(g.jobEpoch + INTERVAL)
+    expect(nextJobRefreshAt(g, g.jobEpoch + INTERVAL * 2.5)).toBe(g.jobEpoch + INTERVAL * 3)
   })
 })

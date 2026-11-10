@@ -17,10 +17,10 @@ export const STATUS_LABEL: Record<AircraftStatus, string> = {
 }
 
 export const STATUS_TONE: Record<AircraftStatus, string> = {
-  parked: 'bg-white/10 text-muted',
-  loading: 'bg-purple/20 text-purple',
+  parked: 'bg-ink/8 text-muted',
+  loading: 'bg-sky/20 text-sky',
   departing: 'bg-orange/20 text-orange',
-  cruising: 'bg-cyan/15 text-cyan',
+  cruising: 'bg-teal/15 text-teal',
   arriving: 'bg-orange/20 text-orange',
 }
 
@@ -58,7 +58,7 @@ export function FleetPanel() {
                 if (pos) focusOn(pos.lat, pos.lon)
               }}
               className={`mb-2 block w-full rounded-2xl p-3.5 text-left transition ${
-                active ? 'bg-panel-2 ring-1 ring-cyan' : 'bg-panel-2/60 hover:bg-panel-2'
+                active ? 'bg-panel-2 ring-1 ring-teal' : 'bg-panel-2/60 hover:bg-panel-2'
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -80,7 +80,7 @@ export function FleetPanel() {
                 </div>
                 <div>
                   <div className="mb-1 flex justify-between"><span>Cargo</span><span>{load.cargoKg.toLocaleString('en-US')}/{model.cargoCapacityKg.toLocaleString('en-US')} kg</span></div>
-                  <Meter value={load.cargoKg} max={model.cargoCapacityKg} tone="bg-purple" />
+                  <Meter value={load.cargoKg} max={model.cargoCapacityKg} tone="bg-sky" />
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between text-sm font-bold">

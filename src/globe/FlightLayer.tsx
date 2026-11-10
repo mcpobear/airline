@@ -93,7 +93,7 @@ export const FlightLayer = memo(function FlightLayer() {
       mat.decompose(p1, quat, scaleV)
       hm.setMatrixAt(n, mat.compose(p1, quat, scaleV.setScalar(size * 1.9)))
       const picked = selection?.kind === 'aircraft' && selection.id === a.id
-      pm.setColorAt(n, COLOR.set(picked ? '#ffd24a' : '#ffffff'))
+      pm.setColorAt(n, COLOR.set(picked ? '#e0581e' : '#fdfaf4'))
       ids.current.push(a.id)
       n++
     }
@@ -117,7 +117,7 @@ export const FlightLayer = memo(function FlightLayer() {
   return (
     <>
       <instancedMesh ref={planes} args={[geometry, undefined, CAPACITY]} frustumCulled={false} count={0}>
-        <meshStandardMaterial flatShading roughness={0.5} emissive="#8fdcff" emissiveIntensity={0.28} />
+        <meshStandardMaterial flatShading roughness={0.45} metalness={0.1} />
       </instancedMesh>
       <instancedMesh
         ref={hits}
@@ -151,8 +151,8 @@ function lineGeometry(from: string, to: string) {
 function RouteLine({ from, to, dashed = false }: { from: string; to: string; dashed?: boolean }) {
   const line = useMemo(() => {
     const material = dashed
-      ? new THREE.LineDashedMaterial({ color: '#ffd24a', dashSize: 0.02, gapSize: 0.014, transparent: true, opacity: 0.9, depthWrite: false })
-      : new THREE.LineBasicMaterial({ color: '#6fd8ff', transparent: true, opacity: 0.45, depthWrite: false })
+      ? new THREE.LineDashedMaterial({ color: '#c2491c', dashSize: 0.02, gapSize: 0.014, transparent: true, opacity: 0.9, depthWrite: false })
+      : new THREE.LineBasicMaterial({ color: '#1a6a66', transparent: true, opacity: 0.6, depthWrite: false })
     const l = new THREE.Line(lineGeometry(from, to), material)
     if (dashed) l.computeLineDistances()
     return l

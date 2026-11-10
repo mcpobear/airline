@@ -9,10 +9,10 @@ export const CLASS_LABEL: Record<AirportClass, string> = {
 export function ClassBadge({ cls }: { cls: AirportClass }) {
   const tone =
     cls === 'international'
-      ? 'bg-purple/20 text-purple'
+      ? 'bg-sky/20 text-sky'
       : cls === 'major'
-        ? 'bg-cyan/15 text-cyan'
-        : 'bg-white/10 text-muted'
+        ? 'bg-teal/15 text-teal'
+        : 'bg-ink/8 text-muted'
   return (
     <span className={`rounded-full px-2.5 py-0.5 text-xs font-extrabold ${tone}`}>
       {CLASS_LABEL[cls]}
@@ -22,7 +22,7 @@ export function ClassBadge({ cls }: { cls: AirportClass }) {
 
 export function IataBadge({ iata }: { iata: string }) {
   return (
-    <span className="rounded-lg bg-space/70 px-2 py-0.5 text-sm font-black tracking-wider">
+    <span className="rounded-lg bg-paper/70 px-2 py-0.5 text-sm font-black tracking-wider">
       {iata}
     </span>
   )
