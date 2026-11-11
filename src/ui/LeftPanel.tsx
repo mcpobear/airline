@@ -100,7 +100,7 @@ function AirportsList() {
           </button>
         </div>
       </div>
-      <div className="panel-scroll flex-1 overflow-y-auto px-3 pb-4">
+      <div className="panel-scroll flex-1 overflow-y-auto px-3 pt-1 pb-4">
         {rows.length === 0 && <p className="px-3 py-6 text-sm text-muted">No airports match.</p>}
         {rows.map((a) => {
           const isUnlocked = unlockedSet.has(a.iata)

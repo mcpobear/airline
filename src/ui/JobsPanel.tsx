@@ -65,7 +65,7 @@ export function JobsPanel() {
           ))}
         </div>
       </div>
-      <div className="panel-scroll flex-1 overflow-y-auto px-3 pb-4">
+      <div className="panel-scroll flex-1 overflow-y-auto px-3 pt-1 pb-4">
         <JobBoardTimer />
         {shown.length === 0 && (
           <p className="px-1 py-4 text-sm text-muted">

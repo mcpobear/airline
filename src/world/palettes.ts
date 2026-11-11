@@ -100,7 +100,7 @@ const ATLAS: WorldPalette = {
   seaShelf: [0x4f, 0xa0, 0xa8],
   coast: [0x16, 0x32, 0x36],
   coastStrength: 1,
-  coastWidth: 0.1,
+  coastWidth: 0.17,
   biomes: {
     ice: [0xf6, 0xf1, 0xe6],
     tundra: [0xd9, 0xd2, 0xb8],
@@ -112,7 +112,7 @@ const ATLAS: WorldPalette = {
     rock: [0xc4, 0xb0, 0x8c],
   },
   relief: 0.06,
-  shelf: 1 / 300,
+  shelf: 1 / 900,
   graticule: { colour: [0x16, 0x32, 0x36], strength: 0.13, spacing: 20 },
 }
 
@@ -123,7 +123,7 @@ const NIGHT: WorldPalette = {
   seaShelf: [0x12, 0x2b, 0x45],
   coast: [0x6f, 0xd8, 0xd0],
   coastStrength: 0.95,
-  coastWidth: 0.09,
+  coastWidth: 0.16,
   biomes: {
     ice: [0x7d, 0x92, 0xa6],
     tundra: [0x66, 0x7b, 0x8c],
@@ -134,8 +134,8 @@ const NIGHT: WorldPalette = {
     desert: [0x75, 0x87, 0x89],
     rock: [0x5d, 0x71, 0x7e],
   },
-  relief: 0.12,
-  shelf: 1 / 420,
+  relief: 0.22,
+  shelf: 1 / 900,
   graticule: { colour: [0x4f, 0x9d, 0xa8], strength: 0.09, spacing: 30 },
 }
 
@@ -146,7 +146,7 @@ const BOLD: WorldPalette = {
   seaShelf: [0x46, 0xa8, 0xca],
   coast: [0x14, 0x2b, 0x33],
   coastStrength: 1,
-  coastWidth: 0.2,
+  coastWidth: 0.3,
   biomes: {
     ice: [0xf2, 0xf4, 0xf0],
     tundra: [0xbf, 0xc4, 0x9e],
@@ -158,7 +158,7 @@ const BOLD: WorldPalette = {
     rock: [0xa8, 0x8a, 0x5f],
   },
   relief: 0,
-  shelf: 1 / 420,
+  shelf: 1 / 900,
 }
 
 /** Relief globe: closer to a physical map, with real greens and browns. */
@@ -167,8 +167,8 @@ const RELIEF: WorldPalette = {
   seaMid: [0x18, 0x56, 0x85],
   seaShelf: [0x31, 0x88, 0xad],
   coast: [0x16, 0x33, 0x3f],
-  coastStrength: 0.5,
-  coastWidth: 0.08,
+  coastStrength: 0.8,
+  coastWidth: 0.17,
   biomes: {
     ice: [0xf4, 0xf7, 0xfa],
     tundra: [0x9a, 0xa5, 0x88],
@@ -179,8 +179,8 @@ const RELIEF: WorldPalette = {
     desert: [0xd6, 0xbb, 0x7e],
     rock: [0x8b, 0x76, 0x5c],
   },
-  relief: 0.3,
-  shelf: 1 / 300,
+  relief: 0.45,
+  shelf: 1 / 900,
 }
 
 export const GLOBE_STYLES: GlobeStyle[] = [
@@ -247,7 +247,7 @@ export const GLOBE_STYLES: GlobeStyle[] = [
   {
     id: 'bold',
     name: 'Bold poster',
-    blurb: 'Saturated flat colour with a thick drawn coastline and no shading. The most graphic of the four.',
+    blurb: 'Saturated flat colour with a thick drawn coastline and no shading. The most graphic of them.',
     faceted: false,
     palette: BOLD,
     lighting: {
@@ -266,8 +266,8 @@ export const GLOBE_STYLES: GlobeStyle[] = [
   },
   {
     id: 'faceted',
-    name: 'Low poly (current)',
-    blurb: 'The faceted globe the game has today: visible triangles and a stepped coastline.',
+    name: 'Low poly',
+    blurb: 'Faceted geometry rather than a painted map: visible triangles and a stepped coastline.',
     faceted: true,
     palette: JET_AGE,
     lighting: {

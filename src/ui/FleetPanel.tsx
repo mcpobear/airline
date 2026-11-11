@@ -39,7 +39,7 @@ export function FleetPanel() {
   return (
     <aside className={leftShell}>
       <PanelHeader title="Fleet" hint={`${aircraft.length} aircraft`} />
-      <div className="panel-scroll flex-1 overflow-y-auto px-3 pb-4">
+      <div className="panel-scroll flex-1 overflow-y-auto px-3 pt-1 pb-4">
         {aircraft.length === 0 && (
           <p className="px-3 py-6 text-sm text-muted">No aircraft yet. Buy one from the Market.</p>
         )}

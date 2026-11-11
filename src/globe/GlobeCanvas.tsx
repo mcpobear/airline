@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
 import * as THREE from 'three'
@@ -11,13 +11,40 @@ import { FlightLayer } from './FlightLayer'
 import { aircraftPosition } from '../sim/aircraft'
 import { buildGlobeGeometry } from './buildGlobeGeometry'
 import { globeStyle, type GlobeStyle } from '../world/palettes'
-import { TEXTURE_HEIGHT, TEXTURE_WIDTH, worldPixels } from '../world/worldTexture'
+import { cachedWorldPixels, preferredTextureSize, worldPixelsAsync } from '../world/worldTexture'
 import { latLonToVector3, subSolarPoint, vectorToLatLon } from './coords'
 
 const G = BALANCE.globe
 
 function defaultCameraPosition() {
   return latLonToVector3(G.defaultView.lat, G.defaultView.lon, G.defaultDistance)
+}
+
+interface PaintedWorld {
+  pixels: Uint8ClampedArray<ArrayBuffer>
+  width: number
+  height: number
+}
+
+/** The first, rough pass: small enough to paint in well under a second. */
+const QUICK = { width: 1024, height: 512 }
+
+/** The sharpest version of a style already painted this session, if any. */
+function bestCached(styleId: string): PaintedWorld | null {
+  const full = preferredTextureSize()
+  for (const size of [full, QUICK]) {
+    const pixels = cachedWorldPixels(styleId, size.width, size.height)
+    if (pixels) return { pixels, width: size.width, height: size.height }
+  }
+  return null
+}
+
+const WHITE = new THREE.Color(1, 1, 1)
+
+/** A style's deep-ocean colour, as a Three.js colour. */
+function seaColour(style: GlobeStyle): THREE.Color {
+  const [r, g, b] = style.palette.seaDeep
+  return new THREE.Color(r / 255, g / 255, b / 255).convertSRGBToLinear()
 }
 
 /** The planet itself: either faceted low-poly geometry or a smooth painted sphere. */
@@ -27,13 +54,39 @@ const Earth = memo(function Earth({ style }: { style: GlobeStyle }) {
     () => (style.faceted ? buildGlobeGeometry(G.detail) : new THREE.SphereGeometry(1, 96, 64)),
     [style.faceted],
   )
+  // Painting the world happens in a worker: at full size it is eight million
+  // pixels and several seconds, which would hold up the first frame. A small
+  // pass goes first so there is a globe to look at straight away, then the
+  // full one replaces it a few seconds later. Anything painted earlier in the
+  // session is already in hand and goes up on the first render.
+  const [map, setMap] = useState<PaintedWorld | null>(() =>
+    style.faceted ? null : bestCached(style.id),
+  )
+  useEffect(() => {
+    if (style.faceted) return
+    let live = true
+    const full = preferredTextureSize()
+    setMap(bestCached(style.id))
+
+    const show = (width: number, height: number) => (pixels: Uint8ClampedArray<ArrayBuffer>) => {
+      // The quick pass may land after the full one; never go backwards.
+      if (live) setMap((current) => (current && current.width >= width ? current : { pixels, width, height }))
+    }
+    if (!cachedWorldPixels(style.id, full.width, full.height)) {
+      void worldPixelsAsync(style.id, QUICK.width, QUICK.height).then(show(QUICK.width, QUICK.height))
+    }
+    void worldPixelsAsync(style.id, full.width, full.height).then(show(full.width, full.height))
+    return () => {
+      live = false
+    }
+  }, [style.faceted, style.id])
+
   const texture = useMemo(() => {
-    if (style.faceted) return null
+    if (style.faceted || !map) return null
     const canvas = document.createElement('canvas')
-    canvas.width = TEXTURE_WIDTH
-    canvas.height = TEXTURE_HEIGHT
-    const pixels = worldPixels(style.id)
-    canvas.getContext('2d')!.putImageData(new ImageData(pixels, TEXTURE_WIDTH, TEXTURE_HEIGHT), 0, 0)
+    canvas.width = map.width
+    canvas.height = map.height
+    canvas.getContext('2d')!.putImageData(new ImageData(map.pixels, map.width, map.height), 0, 0)
     const t = new THREE.CanvasTexture(canvas)
     t.colorSpace = THREE.SRGBColorSpace
     t.anisotropy = 8
@@ -42,7 +95,7 @@ const Earth = memo(function Earth({ style }: { style: GlobeStyle }) {
     t.wrapS = THREE.RepeatWrapping
     t.offset.x = 0.25
     return t
-  }, [style.faceted, style.id])
+  }, [style.faceted, map])
 
   useEffect(() => () => texture?.dispose(), [texture])
   useEffect(() => () => geometry.dispose(), [geometry])
@@ -59,7 +112,18 @@ const Earth = memo(function Earth({ style }: { style: GlobeStyle }) {
       {style.faceted ? (
         <meshStandardMaterial vertexColors flatShading roughness={0.92} metalness={0} />
       ) : (
-        <meshStandardMaterial map={texture} roughness={0.95} metalness={0} />
+        // Until the map has been painted this is an ocean-coloured ball, so
+        // the globe turns up with the rest of the scene rather than after it.
+        // The key matters: without it the renderer keeps one material across
+        // the swap, which leaves the placeholder's tint multiplying the
+        // finished map and never recompiles the shader to sample it at all.
+        <meshStandardMaterial
+          key={texture ? 'painted' : 'plain'}
+          map={texture}
+          color={texture ? WHITE : seaColour(style)}
+          roughness={0.95}
+          metalness={0}
+        />
       )}
     </mesh>
   )

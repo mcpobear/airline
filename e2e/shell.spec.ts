@@ -294,3 +294,77 @@ test('the world style can be changed, and the music muted', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Play lounge music' })).toBeVisible()
   expect(errors).toEqual([])
 })
+
+test('the panels always clear the heads-up display, however it wraps', async ({ page }) => {
+  await page.goto('/')
+  await page.getByPlaceholder('e.g. Merlion Air').fill('Merlion Air')
+  await page.getByRole('button', { name: 'Choose headquarters' }).click()
+  await page.getByLabel('Search airports').fill('singapore')
+  await page.getByRole('button', { name: /SIN/ }).click()
+  await page.getByRole('button', { name: 'Launch airline' }).click()
+  await expect(page.getByText('HQ · SIN')).toBeVisible()
+
+  // Narrow enough that the stat cards wrap onto a second row, which is what
+  // used to leave the HUD sitting over the top of the panel.
+  for (const width of [1600, 900, 820]) {
+    await page.setViewportSize({ width, height: 760 })
+    const hud = await page.getByRole('banner').boundingBox()
+    const panel = await page.getByRole('heading', { name: 'Fleet' }).locator('..').boundingBox()
+    expect(hud, `banner at ${width}px`).not.toBeNull()
+    expect(panel, `panel at ${width}px`).not.toBeNull()
+    expect(panel!.y, `panel must start below the HUD at ${width}px`).toBeGreaterThanOrEqual(
+      hud!.y + hud!.height,
+    )
+  }
+})
+
+test('on a phone the navigation sits at the bottom and the panel can be put away', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await page.getByPlaceholder('e.g. Merlion Air').fill('Pocket Air')
+  await page.getByRole('button', { name: 'Choose headquarters' }).click()
+  await page.getByLabel('Search airports').fill('singapore')
+  await page.getByRole('button', { name: /SIN/ }).click()
+  await page.getByRole('button', { name: 'Launch airline' }).click()
+
+  const nav = page.getByRole('navigation')
+  const navBox = await nav.boundingBox()
+  expect(navBox!.y, 'navigation should be along the bottom').toBeGreaterThan(844 / 2)
+  expect(navBox!.width, 'navigation should span the width').toBeGreaterThan(300)
+
+  // The panel covers the map, so tapping the open tab puts it away again.
+  const fleetTab = nav.getByRole('button', { name: 'Fleet' })
+  await expect(page.getByRole('heading', { name: 'Fleet' })).toBeVisible()
+
+  // The opening hint floats over the whole screen, so it has to stand aside
+  // while a panel is open rather than sitting on top of the controls.
+  const hint = page.getByText('No jobs yet', { exact: false })
+  await expect(hint).toBeHidden()
+  await fleetTab.click()
+  await expect(page.getByRole('heading', { name: 'Fleet' })).toBeHidden()
+  // Escape clears the airport left selected by choosing a headquarters, which
+  // also keeps the hint out of the way while it is showing.
+  await page.keyboard.press('Escape')
+  await expect(hint).toBeVisible()
+  await page.getByRole('status').getByRole('button', { name: 'Dismiss hint' }).click()
+  await expect(hint).toBeHidden()
+  await fleetTab.click()
+  await expect(page.getByRole('heading', { name: 'Fleet' })).toBeVisible()
+
+  // Nothing may push the layout wider than the screen: a sideways scroll on a
+  // phone leaves controls off the edge with no way to reach them.
+  for (const [section, heading] of [
+    ['Jobs', 'Jobs'],
+    ['Market', 'Aircraft Market'],
+    ['Finances', 'Finances'],
+    ['Settings', 'Settings'],
+  ]) {
+    await nav.getByRole('button', { name: section }).click()
+    await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+    const overflow = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+    }))
+    expect(overflow.scroll, `${section} must not scroll sideways`).toBeLessThanOrEqual(overflow.client)
+  }
+})

@@ -21,7 +21,7 @@ export function FinancesPanel() {
   return (
     <aside className={leftShell}>
       <PanelHeader title="Finances" />
-      <div className="panel-scroll flex-1 space-y-3 overflow-y-auto px-3 pb-4 text-sm">
+      <div className="panel-scroll flex-1 space-y-3 overflow-y-auto px-3 pt-1 pb-4 text-sm">
         <div className="rounded-2xl bg-panel-2/70 p-4">
           <Row k="Cash" v={<span className="text-good">{formatMoney(f.cash)}</span>} />
           <Row k="Fleet resale value" v={formatMoney(f.fleetValue)} />

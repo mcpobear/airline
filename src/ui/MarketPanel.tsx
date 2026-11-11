@@ -59,12 +59,15 @@ function ModelCard({ model }: { model: AircraftModel }) {
           Not yet in service · {model.serviceNote}
         </div>
       )}
+      {/* Five columns across a panel this narrow leave about sixty pixels
+          each, so the labels have to be one short word - a two-word label
+          wraps and knocks that column's value out of line with the rest. */}
       <div className="mt-2.5 grid grid-cols-5 gap-2">
         <Stat label="Seats" value={String(model.passengerCapacity)} />
         <Stat label="Cargo" value={`${(model.cargoCapacityKg / 1000).toFixed(1)}t`} />
-        <Stat label="Range km" value={`${(model.rangeKm / 1000).toFixed(1)}k`} />
+        <Stat label="Range" value={`${(model.rangeKm / 1000).toFixed(1)}k km`} />
         <Stat label="Speed" value={`${model.cruiseSpeedKmh}`} />
-        <Stat label="Cost/km" value={`$${model.operatingCostPerKm.toFixed(1)}`} />
+        <Stat label="Per km" value={`$${model.operatingCostPerKm.toFixed(1)}`} />
       </div>
       <button
         type="button"
@@ -110,7 +113,7 @@ export function MarketPanel() {
           </button>
         ))}
       </div>
-      <div className="panel-scroll flex-1 overflow-y-auto px-3 pb-4">
+      <div className="panel-scroll flex-1 overflow-y-auto px-3 pt-1 pb-4">
         <p className="px-1 pb-2 text-xs text-muted">New aircraft are delivered to your headquarters.</p>
         {models.map((m) => (
           <ModelCard key={m.id} model={m} />

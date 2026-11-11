@@ -12,9 +12,11 @@ A casual, single-player airline management game on an interactive 3D globe. No b
 5. Controls: drag to rotate the globe, wheel/pinch to zoom, Esc closes the side panel, "Follow on map" tracks a flying aircraft.
 
 ## The globe
-The world is painted once at startup from the Natural Earth land mask: land, sea, a drawn coastline and a lightened
-continental shelf, so land and water never read as the same surface. Five looks ship, switchable in Settings and
-remembered in your browser:
+The world is painted from a 4096x2048 Natural Earth land mask: land, sea, a drawn coastline and a lightened
+continental shelf, so land and water never read as the same surface. The mask matches the texture pixel for pixel,
+so coastlines are drawn rather than upscaled. Painting eight million pixels takes a few seconds, so it happens in a
+worker: a rough pass appears almost at once and the full one replaces it a moment later. Phones paint at half size.
+Five looks ship, switchable in Settings and remembered in your browser:
 
 | Style | Looks like |
 | --- | --- |
@@ -58,7 +60,7 @@ npm run build      # typecheck + production build
 npm run preview    # serve the production build
 npm test           # unit tests (Vitest)
 npm run test:e2e   # end-to-end smoke test (Playwright; run `npx playwright install chromium` once)
-npm run generate:landmask   # regenerate the land mask from world-atlas
+npm run generate:landmask   # regenerate the land mask from world-atlas (output is committed)
 ```
 
 ## Deploy to GitHub Pages
@@ -82,8 +84,7 @@ Every balancing number lives in `src/config/balance.ts` (cash, prices, rewards, 
 ## Known limitations
 - Two tabs on one airline are detected and paused, not merged.
 - Aircraft and airports are simplified models (real names, codes and coordinates; approximate specs and balancing prices). The 737 MAX 7/10 and 777-8/9 are flagged "not yet in service" (as of Nov 2026) and hidden unless enabled in Settings.
-- Land outline is coarse (110 m Natural Earth) by design. The globe chunk is ~950 kB (loaded separately from the UI).
+- The globe chunk is ~950 kB, loaded separately from the UI.
 - Labels are decluttered by priority, so some airport codes appear only when zoomed in.
-- The flat map's imagery is generated once at startup at 2048x1024, so it softens at the deepest zoom.
-- Switching map mode loads a separate code chunk, which takes a moment on a slow machine.
+- The world imagery is painted once per session, so the first few seconds show a rough pass before the full one lands.
 - No tutorial beyond the hints in the panels.
